@@ -1,0 +1,8 @@
+{
+  "name": "LV1",
+  "description": "Comparador de preços de bicicletas elétricas no Brasil. Encontre a e-bike perfeita pelo menor preço, com ofertas conferidas manualmente.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

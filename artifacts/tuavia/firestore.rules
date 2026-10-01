@@ -1,0 +1,58 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Regra para Bikes
+    match /bikes/{bikeSlug} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    // Regra para Avaliações e Comentários da Comunidade
+    match /reviews/{reviewId} {
+      // Qualquer visitante pode ler avaliações auditadas/aprovadas
+      allow read: if resource == null || resource.data.status == 'approved' || request.auth != null;
+
+      // Criação protegida:
+      // 1. O id deve bater com o reviewId
+      // 2. O rating deve ser um número entre 1 e 5
+      // 3. A autonomia deve ser entre 5 e 300 km
+      // 4. O autor, título e comentário não podem ser vazios e devem respeitar limites de caracteres
+      // 5. O status deve ser 'approved' ou 'pending'
+      allow create: if request.resource.data.keys().hasAll(['id', 'bikeSlug', 'author', 'rating', 'realRangeKm', 'title', 'comment', 'date'])
+        && request.resource.data.id == reviewId
+        && request.resource.data.rating is number
+        && request.resource.data.rating >= 1 && request.resource.data.rating <= 5
+        && request.resource.data.realRangeKm is number
+        && request.resource.data.realRangeKm >= 5 && request.resource.data.realRangeKm <= 300
+        && request.resource.data.author is string && request.resource.data.author.size() <= 60
+        && request.resource.data.title is string && request.resource.data.title.size() <= 120
+        && request.resource.data.comment is string && request.resource.data.comment.size() <= 1600
+        && (!('status' in request.resource.data) || request.resource.data.status in ['approved', 'pending']);
+
+      // Atualização apenas de contagem de votos úteis para público, ou total para autenticados
+      allow update: if request.auth != null || (
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['helpfulCount'])
+        && request.resource.data.helpfulCount is number
+        && request.resource.data.helpfulCount == resource.data.helpfulCount + 1
+      );
+
+      // Exclusão permitida apenas para administradores autenticados
+      allow delete: if request.auth != null;
+    }
+
+    // Ambiente Isolado de Staging & Caches de Extração (Separado do Catálogo de E-Bikes)
+    // Cache de extração: servidor Admin SDK escapa das rules, então nenhuma
+    // collection precisa ficar aberta para o painel funcionar. A versão anterior
+    // (`if true`) permitia a qualquer pessoa ler e apagar fichas técnicas.
+    match /extraction_staging/{cacheId} {
+      allow read, write, delete: if false;
+    }
+
+    // Coleções gerais
+    match /{document=**} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+  }
+}

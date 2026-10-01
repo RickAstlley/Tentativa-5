@@ -1,0 +1,63 @@
+# See https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files for more about ignoring files.
+
+# compiled output
+dist
+tmp
+out-tsc
+*.tsbuildinfo
+.expo
+.expo-shared
+
+# dependencies
+node_modules
+
+# Saída de build espelhada na raiz, criada por scripts/build-deploy.mjs para
+# que a hospedagem encontre `.next`. O build real fica em artifacts/tuavia/.next.
+/.next
+
+# O lockfile do npm é gerado só na hospedagem; o pnpm-lock.yaml é a fonte de
+# verdade e não deve ser substituído por um lockfile divergente.
+package-lock.json
+
+# Fila de jobs de IA em runtime. Em desenvolvimento, `getLocalJobsFilePath()`
+# sobe os diretórios atrás de um caminho persistente e acaba resolvendo para
+# este `data/` na raiz do workspace — é o mesmo arquivo que o supervisor usa em
+# produção (ou o `LLM_JOBS_FILE`), então nunca deve ser versionado.
+data/llm_jobs.json
+
+# IDEs and editors
+/.idea
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+
+# IDE - VSCode
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# misc
+/.sass-cache
+/connect.lock
+/coverage
+/libpeerconnection.log
+npm-debug.log
+yarn-error.log
+testem.log
+/typings
+
+# System Files
+.DS_Store
+Thumbs.db
+
+.cursor/rules/nx-rules.mdc
+.github/instructions/nx.instructions.md
+
+# Replit
+.cache/
+.local/

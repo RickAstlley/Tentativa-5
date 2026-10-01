@@ -1,0 +1,844 @@
+[
+  {
+    "ofertas": [
+      {
+        "id": 1787871554088,
+        "loja": "Mercado Livre",
+        "preco": 4645,
+        "precoDe": 9999,
+        "destaqueOferta": "54%",
+        "linkProduto": "https://meli.la/2Rqbd2f",
+        "disponibilidade": "Em estoque",
+        "dataAtualizacao": "2026-08-27",
+        "observacoes": ""
+      }
+    ],
+    "potenciaW": 350,
+    "usoPrincipal": "Urbana",
+    "menorPreco": 4645,
+    "modelo": "Panda PD100 36V 10",
+    "imagemUrl": "/images/bikes/panda-panda-pd100-36v-10.webp",
+    "pesoKg": 23.5,
+    "specSections": [
+      {
+        "title": "Motor & Sistema Elétrico",
+        "items": [
+          {
+            "label": "Tipo de Motor",
+            "value": "Motor de Cubo Traseiro Brushless 350W"
+          },
+          {
+            "label": "Potência Nominal",
+            "value": "350W"
+          },
+          {
+            "label": "Torque Máximo",
+            "value": "45 Nm"
+          },
+          {
+            "label": "Velocidade Máxima",
+            "value": "25 a 32 km/h (Assistida - CONTRAN 996/2023)"
+          },
+          {
+            "label": "Sensor de Pedalada",
+            "value": "Sensor de cadência magnético de alta precisão"
+          }
+        ]
+      },
+      {
+        "title": "Bateria & Energia",
+        "items": [
+          {
+            "label": "Composição",
+            "value": "Íons de Lítio (36V 10.4Ah)"
+          },
+          {
+            "label": "Capacidade",
+            "value": "374 Wh Removível"
+          },
+          {
+            "label": "Autonomia por Carga",
+            "value": "Até 40 km em modo Eco"
+          },
+          {
+            "label": "Tempo de Recarga",
+            "value": "5 a 6 horas (Bivolt)"
+          },
+          {
+            "label": "Removível",
+            "value": "Sim, com chave de segurança"
+          }
+        ]
+      },
+      {
+        "title": "Quadro, Suspensão & Pneus",
+        "items": [
+          {
+            "label": "Material do Quadro",
+            "value": "Alumínio 6061 T6 Hidroformado"
+          },
+          {
+            "label": "Garfo Dianteiro",
+            "value": "Suspensão Conforto 50mm"
+          },
+          {
+            "label": "Medida dos Pneus",
+            "value": "Aro 27.5\" x 1.95\" Urbano"
+          },
+          {
+            "label": "Peso do Conjunto",
+            "value": "23.5 kg"
+          },
+          {
+            "label": "Capacidade de Carga",
+            "value": "120 kg máximo"
+          }
+        ]
+      },
+      {
+        "title": "Transmissão & Freios",
+        "items": [
+          {
+            "label": "Sistema de Transmissão",
+            "value": "Shimano Tourney 7 Velocidades"
+          },
+          {
+            "label": "Trocadores de Marcha",
+            "value": "Shimano RevoShift / RapidFire 7v"
+          },
+          {
+            "label": "Freios Dianteiro / Traseiro",
+            "value": "Freios a Disco 160mm"
+          },
+          {
+            "label": "Corte de Energia",
+            "value": "Sensores elétricos nos manetes"
+          }
+        ]
+      }
+    ],
+    "maiorPreco": 4645,
+    "badge": "Melhor Custo-Benefício Urbano",
+    "createdAt": "2026-08-27T23:13:24.930Z",
+    "marca": "Panda",
+    "autonomiaKm": 40,
+    "pros": [
+      "Motor elétrico de 350W com entrega suave e torque linear para subidas",
+      "Bateria de lítio removível com chave de proteção contra furto e recarga prática",
+      "Quadro resistente em liga de alumínio com ergonomia adaptada para vias brasileiras"
+    ],
+    "verdict": "A Panda Panda PD100 36V 10,4Ah Bicicleta Elétrica para Adolescentes é uma bicicleta elétrica projetada para o segmento urbana, combinando motor elétrico de 350W com autonomia estimada de 40 km por carga. O conjunto entrega assistência progressiva ao pedal, quadro balanceado e confiabilidade para deslocamentos diários no Brasil.",
+    "idealFor": "Ciclistas que buscam agilidade na mobilidade diária, economia no transporte e facilidade para vencer subidas e distâncias urbanas.",
+    "tempoCargaHoras": 5,
+    "resumoExecutivo": "A Panda Panda PD100 36V 10,4Ah Bicicleta Elétrica para Adolescentes é uma bicicleta elétrica projetada para o segmento urbana, combinando motor elétrico de 350W com autonomia estimada de 40 km por carga. O conjunto entrega assistência progressiva ao pedal, quadro balanceado e confiabilidade para deslocamentos diários no Brasil.",
+    "slug": "panda-panda-pd100-36v-10",
+    "cons": [
+      "Tempo de recarga padrão de cerca de 5 horas para ciclo completo",
+      "Requer calibragem periódica da pressão dos pneus para otimizar autonomia"
+    ],
+    "galleryImages": []
+  },
+  {
+    "ofertas": [
+      {
+        "id": 1787931702566,
+        "loja": "Mercado Livre",
+        "preco": 2469,
+        "precoDe": 4665,
+        "destaqueOferta": "47%",
+        "linkProduto": "https://meli.la/1Pzuf26",
+        "disponibilidade": "Em estoque",
+        "dataAtualizacao": "2026-08-28",
+        "observacoes": ""
+      }
+    ],
+    "potenciaW": 350,
+    "usoPrincipal": "Urbana",
+    "menorPreco": 2469,
+    "modelo": "B20",
+    "imagemUrl": "/images/bikes/honeywhale-b20.webp",
+    "pesoKg": 22,
+    "specSections": [
+      {
+        "title": "Motor & Sistema Elétrico",
+        "items": [
+          {
+            "label": "Tipo de Motor",
+            "value": "Motor de Cubo Traseiro Brushless 350W"
+          },
+          {
+            "label": "Potência Nominal",
+            "value": "350W"
+          },
+          {
+            "label": "Torque Máximo",
+            "value": "45 Nm"
+          },
+          {
+            "label": "Velocidade Máxima",
+            "value": "25 a 32 km/h (Assistida - CONTRAN 996/2023)"
+          },
+          {
+            "label": "Sensor de Pedalada",
+            "value": "Sensor de cadência magnético de alta precisão"
+          }
+        ]
+      },
+      {
+        "title": "Bateria & Energia",
+        "items": [
+          {
+            "label": "Composição",
+            "value": "Íons de Lítio (36V 10.4Ah)"
+          },
+          {
+            "label": "Capacidade",
+            "value": "374 Wh Removível"
+          },
+          {
+            "label": "Autonomia por Carga",
+            "value": "Até 40 km em modo Eco"
+          },
+          {
+            "label": "Tempo de Recarga",
+            "value": "5 a 6 horas (Bivolt)"
+          },
+          {
+            "label": "Removível",
+            "value": "Sim, com chave de segurança"
+          }
+        ]
+      },
+      {
+        "title": "Quadro, Suspensão & Pneus",
+        "items": [
+          {
+            "label": "Material do Quadro",
+            "value": "Alumínio 6061 T6 Hidroformado"
+          },
+          {
+            "label": "Garfo Dianteiro",
+            "value": "Suspensão Conforto 50mm"
+          },
+          {
+            "label": "Medida dos Pneus",
+            "value": "Aro 27.5\" x 1.95\" Urbano"
+          },
+          {
+            "label": "Peso do Conjunto",
+            "value": "22 kg"
+          },
+          {
+            "label": "Capacidade de Carga",
+            "value": "120 kg máximo"
+          }
+        ]
+      },
+      {
+        "title": "Transmissão & Freios",
+        "items": [
+          {
+            "label": "Sistema de Transmissão",
+            "value": "Shimano Tourney 7 Velocidades"
+          },
+          {
+            "label": "Trocadores de Marcha",
+            "value": "Shimano RevoShift / RapidFire 7v"
+          },
+          {
+            "label": "Freios Dianteiro / Traseiro",
+            "value": "Freios a Disco 160mm"
+          },
+          {
+            "label": "Corte de Energia",
+            "value": "Sensores elétricos nos manetes"
+          }
+        ]
+      }
+    ],
+    "maiorPreco": 2469,
+    "badge": "Melhor Custo-Benefício Urbano",
+    "createdAt": "2026-08-28T15:53:57.082Z",
+    "marca": "Honeywhale",
+    "autonomiaKm": 40,
+    "pros": [
+      "Motor elétrico de 350W com entrega suave e torque linear para subidas",
+      "Bateria de lítio removível com chave de proteção contra furto e recarga prática",
+      "Quadro resistente em liga de alumínio com ergonomia adaptada para vias brasileiras"
+    ],
+    "verdict": "A Honeywhale B20 é uma bicicleta elétrica projetada para o segmento urbana, combinando motor elétrico de 350W com autonomia estimada de 40 km por carga. O conjunto entrega assistência progressiva ao pedal, quadro balanceado e confiabilidade para deslocamentos diários no Brasil.",
+    "idealFor": "Ciclistas que buscam agilidade na mobilidade diária, economia no transporte e facilidade para vencer subidas e distâncias urbanas.",
+    "tempoCargaHoras": 5,
+    "resumoExecutivo": "A Honeywhale B20 é uma bicicleta elétrica projetada para o segmento urbana, combinando motor elétrico de 350W com autonomia estimada de 40 km por carga. O conjunto entrega assistência progressiva ao pedal, quadro balanceado e confiabilidade para deslocamentos diários no Brasil.",
+    "slug": "honeywhale-b20",
+    "cons": [
+      "Tempo de recarga padrão de cerca de 5 horas para ciclo completo",
+      "Requer calibragem periódica da pressão dos pneus para otimizar autonomia"
+    ],
+    "galleryImages": [
+      "https://www.honeywhale.com.br/wp-content/uploads/2026/05/D_NQ_NP_2X_708091-MLA89353197116_082025-F.webp",
+      "https://www.honeywhale.com.br/wp-content/uploads/2026/05/D_NQ_NP_2X_635827-MLA89352913696_082025-F.webp",
+      "https://www.honeywhale.com.br/wp-content/uploads/2026/06/b20.webp"
+    ]
+  },
+  {
+    "ofertas": [
+      {
+        "id": 1788178914926,
+        "loja": "Mercado Livre",
+        "preco": 5989,
+        "linkProduto": "https://www.mercadolivre.com.br/up/MLBU4128129828?offer_type=BEST_PRICE&pdp_filters=item_id:MLB6985575680#origin=share&sid=share&wid=MLB6985575680&action=copy",
+        "disponibilidade": "Em estoque",
+        "dataAtualizacao": "2026-08-31",
+        "observacoes": ""
+      }
+    ],
+    "potenciaW": 500,
+    "usoPrincipal": "Urbana",
+    "menorPreco": 5989,
+    "modelo": "BE07 500W",
+    "imagemUrl": "/images/bikes/smartfy-be07-500w.webp",
+    "pesoKg": 26.5,
+    "specSections": [
+      {
+        "title": "Motor & Sistema Elétrico",
+        "items": [
+          {
+            "label": "Tipo de Motor",
+            "value": "Motor de Cubo Traseiro Brushless 500W"
+          },
+          {
+            "label": "Potência Nominal",
+            "value": "500W"
+          },
+          {
+            "label": "Torque Máximo",
+            "value": "55 Nm"
+          },
+          {
+            "label": "Velocidade Máxima",
+            "value": "25 a 32 km/h (Assistida - CONTRAN 996/2023)"
+          },
+          {
+            "label": "Sensor de Pedalada",
+            "value": "Sensor de cadência magnético de alta precisão"
+          }
+        ]
+      },
+      {
+        "title": "Bateria & Energia",
+        "items": [
+          {
+            "label": "Composição",
+            "value": "Íons de Lítio (48V 13Ah)"
+          },
+          {
+            "label": "Capacidade",
+            "value": "624 Wh Removível"
+          },
+          {
+            "label": "Autonomia por Carga",
+            "value": "Até 50 km em modo Eco"
+          },
+          {
+            "label": "Tempo de Recarga",
+            "value": "5 a 6 horas (Bivolt)"
+          },
+          {
+            "label": "Removível",
+            "value": "Sim, com chave de segurança"
+          }
+        ]
+      },
+      {
+        "title": "Quadro, Suspensão & Pneus",
+        "items": [
+          {
+            "label": "Material do Quadro",
+            "value": "Alumínio 6061 T6 Hidroformado"
+          },
+          {
+            "label": "Garfo Dianteiro",
+            "value": "Suspensão Conforto 50mm"
+          },
+          {
+            "label": "Medida dos Pneus",
+            "value": "Aro 27.5\" x 1.95\" Urbano"
+          },
+          {
+            "label": "Peso do Conjunto",
+            "value": "26.5 kg"
+          },
+          {
+            "label": "Capacidade de Carga",
+            "value": "120 kg máximo"
+          }
+        ]
+      },
+      {
+        "title": "Transmissão & Freios",
+        "items": [
+          {
+            "label": "Sistema de Transmissão",
+            "value": "Shimano Tourney 7 Velocidades"
+          },
+          {
+            "label": "Trocadores de Marcha",
+            "value": "Shimano RevoShift / RapidFire 7v"
+          },
+          {
+            "label": "Freios Dianteiro / Traseiro",
+            "value": "Freios a Disco 160mm"
+          },
+          {
+            "label": "Corte de Energia",
+            "value": "Sensores elétricos nos manetes"
+          }
+        ]
+      }
+    ],
+    "maiorPreco": 5989,
+    "badge": "Melhor Custo-Benefício Urbano",
+    "createdAt": "2026-08-31T12:28:54.635Z",
+    "marca": "Smartfy",
+    "autonomiaKm": 50,
+    "pros": [
+      "Motor elétrico de 500W com entrega suave e torque linear para subidas",
+      "Bateria de lítio removível com chave de proteção contra furto e recarga prática",
+      "Quadro resistente em liga de alumínio com ergonomia adaptada para vias brasileiras"
+    ],
+    "verdict": "A Smartfy BE07 500W é uma bicicleta elétrica projetada para o segmento urbana, combinando motor elétrico de 500W com autonomia estimada de 50 km por carga. O conjunto entrega assistência progressiva ao pedal, quadro balanceado e confiabilidade para deslocamentos diários no Brasil.",
+    "idealFor": "Ciclistas que buscam agilidade na mobilidade diária, economia no transporte e facilidade para vencer subidas e distâncias urbanas.",
+    "tempoCargaHoras": 5,
+    "resumoExecutivo": "A Smartfy BE07 500W é uma bicicleta elétrica projetada para o segmento urbana, combinando motor elétrico de 500W com autonomia estimada de 50 km por carga. O conjunto entrega assistência progressiva ao pedal, quadro balanceado e confiabilidade para deslocamentos diários no Brasil.",
+    "slug": "smartfy-be07-500w",
+    "cons": [
+      "Tempo de recarga padrão de cerca de 5 horas para ciclo completo",
+      "Requer calibragem periódica da pressão dos pneus para otimizar autonomia"
+    ],
+    "galleryImages": [
+      "https://www.lgimportados.com/produtos_img/1/0/3/0/9/0/7/IMG_1030907_1.jpg",
+      "https://www.lgimportados.com/produtos_img/1/0/4/8/8/5/8/IMG_1048858_1.png",
+      "https://nissei.com/media/catalog/product/cache/c68e9bbb2d73eded5f4972f8e568886c/o/J/oJMSMeU3L5Ti8aM165uJUx5dcEE7QRFloxK.jpg"
+    ]
+  },
+  {
+    "ofertas": [
+      {
+        "id": 1787934947080,
+        "loja": "Mercado Livre",
+        "preco": 3199,
+        "precoDe": 5999,
+        "destaqueOferta": "47%",
+        "linkProduto": "https://meli.la/2cQrQxx",
+        "disponibilidade": "Em estoque",
+        "dataAtualizacao": "2026-08-28",
+        "observacoes": ""
+      }
+    ],
+    "potenciaW": 350,
+    "usoPrincipal": "Urbana",
+    "menorPreco": 3199,
+    "modelo": "Y-200",
+    "imagemUrl": "/images/bikes/yoo-mobility-y-200.webp",
+    "pesoKg": 22.5,
+    "specSections": [
+      {
+        "title": "Motor & Sistema Elétrico",
+        "items": [
+          {
+            "label": "Tipo de Motor",
+            "value": "Motor de Cubo Traseiro Brushless 350W"
+          },
+          {
+            "label": "Potência Nominal",
+            "value": "350W"
+          },
+          {
+            "label": "Torque Máximo",
+            "value": "45 Nm"
+          },
+          {
+            "label": "Velocidade Máxima",
+            "value": "25 a 32 km/h (Assistida - CONTRAN 996/2023)"
+          },
+          {
+            "label": "Sensor de Pedalada",
+            "value": "Sensor de cadência magnético de alta precisão"
+          }
+        ]
+      },
+      {
+        "title": "Bateria & Energia",
+        "items": [
+          {
+            "label": "Composição",
+            "value": "Íons de Lítio (36V 10.4Ah)"
+          },
+          {
+            "label": "Capacidade",
+            "value": "374 Wh Removível"
+          },
+          {
+            "label": "Autonomia por Carga",
+            "value": "Até 45 km em modo Eco"
+          },
+          {
+            "label": "Tempo de Recarga",
+            "value": "5 a 6 horas (Bivolt)"
+          },
+          {
+            "label": "Removível",
+            "value": "Sim, com chave de segurança"
+          }
+        ]
+      },
+      {
+        "title": "Quadro, Suspensão & Pneus",
+        "items": [
+          {
+            "label": "Material do Quadro",
+            "value": "Alumínio 6061 T6 Hidroformado"
+          },
+          {
+            "label": "Garfo Dianteiro",
+            "value": "Suspensão Conforto 50mm"
+          },
+          {
+            "label": "Medida dos Pneus",
+            "value": "Aro 27.5\" x 1.95\" Urbano"
+          },
+          {
+            "label": "Peso do Conjunto",
+            "value": "22.5 kg"
+          },
+          {
+            "label": "Capacidade de Carga",
+            "value": "120 kg máximo"
+          }
+        ]
+      },
+      {
+        "title": "Transmissão & Freios",
+        "items": [
+          {
+            "label": "Sistema de Transmissão",
+            "value": "Shimano Tourney 7 Velocidades"
+          },
+          {
+            "label": "Trocadores de Marcha",
+            "value": "Shimano RevoShift / RapidFire 7v"
+          },
+          {
+            "label": "Freios Dianteiro / Traseiro",
+            "value": "Freios a Disco 160mm"
+          },
+          {
+            "label": "Corte de Energia",
+            "value": "Sensores elétricos nos manetes"
+          }
+        ]
+      }
+    ],
+    "maiorPreco": 3199,
+    "badge": "Melhor Custo-Benefício Urbano",
+    "createdAt": "2026-08-28T16:42:31.803Z",
+    "marca": "Yoo Mobility",
+    "autonomiaKm": 45,
+    "pros": [
+      "Motor elétrico de 350W com entrega suave e torque linear para subidas",
+      "Bateria de lítio removível com chave de proteção contra furto e recarga prática",
+      "Quadro resistente em liga de alumínio com ergonomia adaptada para vias brasileiras"
+    ],
+    "verdict": "A Yoo Mobility Y-200 é uma bicicleta elétrica projetada para o segmento urbana, combinando motor elétrico de 350W com autonomia estimada de 45 km por carga. O conjunto entrega assistência progressiva ao pedal, quadro balanceado e confiabilidade para deslocamentos diários no Brasil.",
+    "idealFor": "Ciclistas que buscam agilidade na mobilidade diária, economia no transporte e facilidade para vencer subidas e distâncias urbanas.",
+    "tempoCargaHoras": 5,
+    "resumoExecutivo": "A Yoo Mobility Y-200 é uma bicicleta elétrica projetada para o segmento urbana, combinando motor elétrico de 350W com autonomia estimada de 45 km por carga. O conjunto entrega assistência progressiva ao pedal, quadro balanceado e confiabilidade para deslocamentos diários no Brasil.",
+    "slug": "yoo-mobility-y-200",
+    "cons": [
+      "Tempo de recarga padrão de cerca de 5 horas para ciclo completo",
+      "Requer calibragem periódica da pressão dos pneus para otimizar autonomia"
+    ],
+    "galleryImages": []
+  },
+  {
+    "ofertas": [
+      {
+        "id": 1,
+        "loja": "Mercado livre",
+        "preco": 2509,
+        "precoDe": 3200,
+        "destaqueOferta": "22%",
+        "linkProduto": "https://meli.la/19rzjHm",
+        "disponibilidade": "Em estoque",
+        "dataAtualizacao": "2026-09-04",
+        "observacoes": ""
+      }
+    ],
+    "potenciaW": 350,
+    "usoPrincipal": "Dobrável",
+    "menorPreco": 2509,
+    "modelo": "Pliage 48V 350W (2024)",
+    "pesoKg": 24.5,
+    "specSections": [
+      {
+        "title": "Motor & Sistema Elétrico",
+        "items": [
+          {
+            "label": "Tipo de Motor",
+            "value": "Motor de Cubo Traseiro Brushless 350W"
+          },
+          {
+            "label": "Potência Nominal",
+            "value": "350W"
+          },
+          {
+            "label": "Torque Máximo",
+            "value": "45 Nm"
+          },
+          {
+            "label": "Velocidade Máxima",
+            "value": "25 a 32 km/h (Assistida - CONTRAN 996/2023)"
+          },
+          {
+            "label": "Sensor de Pedalada",
+            "value": "Sensor de cadência magnético de alta precisão"
+          }
+        ]
+      },
+      {
+        "title": "Bateria & Energia",
+        "items": [
+          {
+            "label": "Composição",
+            "value": "Íons de Lítio (36V 10.4Ah)"
+          },
+          {
+            "label": "Capacidade",
+            "value": "374 Wh Removível"
+          },
+          {
+            "label": "Autonomia por Carga",
+            "value": "Até 55 km em modo Eco"
+          },
+          {
+            "label": "Tempo de Recarga",
+            "value": "6 a 7 horas (Bivolt)"
+          },
+          {
+            "label": "Removível",
+            "value": "Sim, com chave de segurança"
+          }
+        ]
+      },
+      {
+        "title": "Quadro, Suspensão & Pneus",
+        "items": [
+          {
+            "label": "Material do Quadro",
+            "value": "Alumínio 6061 T6 Hidroformado"
+          },
+          {
+            "label": "Garfo Dianteiro",
+            "value": "Suspensão Conforto 50mm"
+          },
+          {
+            "label": "Medida dos Pneus",
+            "value": "Aro 20\" x 1.95\""
+          },
+          {
+            "label": "Peso do Conjunto",
+            "value": "24.5 kg"
+          },
+          {
+            "label": "Capacidade de Carga",
+            "value": "120 kg máximo"
+          }
+        ]
+      },
+      {
+        "title": "Transmissão & Freios",
+        "items": [
+          {
+            "label": "Sistema de Transmissão",
+            "value": "Shimano Tourney 7 Velocidades"
+          },
+          {
+            "label": "Trocadores de Marcha",
+            "value": "Shimano RevoShift / RapidFire 7v"
+          },
+          {
+            "label": "Freios Dianteiro / Traseiro",
+            "value": "Freios a Disco 160mm"
+          },
+          {
+            "label": "Corte de Energia",
+            "value": "Sensores elétricos nos manetes"
+          }
+        ]
+      }
+    ],
+    "maiorPreco": 2509,
+    "badge": "Melhor Custo-Benefício Urbano",
+    "createdAt": "2026-09-04T17:46:37.355Z",
+    "marca": "Two Dogs",
+    "autonomiaKm": 55,
+    "pros": [
+      "Motor elétrico de 350W com entrega suave e torque linear para subidas",
+      "Bateria de lítio removível com chave de proteção contra furto e recarga prática",
+      "Quadro resistente em liga de alumínio com ergonomia adaptada para vias brasileiras"
+    ],
+    "verdict": "A Two Dogs Pliage 48V 350W (2024) é uma bicicleta elétrica projetada para o segmento dobrável, combinando motor elétrico de 350W com autonomia estimada de 55 km por carga. O conjunto entrega assistência progressiva ao pedal, quadro balanceado e confiabilidade para deslocamentos diários no Brasil.",
+    "idealFor": "Ciclistas que buscam agilidade na mobilidade diária, economia no transporte e facilidade para vencer subidas e distâncias urbanas.",
+    "tempoCargaHoras": 6,
+    "resumoExecutivo": "A Two Dogs Pliage 48V 350W (2024) é uma bicicleta elétrica projetada para o segmento dobrável, combinando motor elétrico de 350W com autonomia estimada de 55 km por carga. O conjunto entrega assistência progressiva ao pedal, quadro balanceado e confiabilidade para deslocamentos diários no Brasil.",
+    "slug": "two-dogs-pliage-48v-350w-2024",
+    "cons": [
+      "Tempo de recarga padrão de cerca de 6 horas para ciclo completo",
+      "Requer calibragem periódica da pressão dos pneus para otimizar autonomia"
+    ],
+    "imagemUrl": "/images/bikes/two-dogs-pliage-48v-350w-2024.webp",
+    "galleryImages": [
+      "https://twodogs.com/wp-content/uploads/2024/04/Pliage-Plus-Eletrica-3-Amarela-com-App-1024x1024.jpg",
+      "https://twodogs.com/wp-content/uploads/2024/04/Pliage-Plus-1-Verde-Web-2.jpg",
+      "https://www.allsports.com.br/wp-content/uploads/2022/01/17594-BICICLETA-ELETRICA-DOBRAVEL-PLIAGE-350W-PLUS-TWO-DOGS-2022.jpg"
+    ]
+  },
+  {
+    "ofertas": [
+      {
+        "id": 1,
+        "loja": "Mercado Livre",
+        "preco": 3999,
+        "linkProduto": "https://meli.la/2sNWBSj",
+        "disponibilidade": "Em estoque",
+        "dataAtualizacao": "2026-09-04",
+        "observacoes": ""
+      }
+    ],
+    "potenciaW": 350,
+    "usoPrincipal": "Urbana",
+    "menorPreco": 3999,
+    "modelo": "Xplore Urban",
+    "pesoKg": 23.5,
+    "specSections": [
+      {
+        "title": "Motor & Sistema Elétrico",
+        "items": [
+          {
+            "label": "Tipo de Motor",
+            "value": "Motor de Cubo Traseiro Brushless 350W"
+          },
+          {
+            "label": "Potência Nominal",
+            "value": "350W"
+          },
+          {
+            "label": "Torque Máximo",
+            "value": "45 Nm"
+          },
+          {
+            "label": "Velocidade Máxima",
+            "value": "25 a 32 km/h (Assistida - CONTRAN 996/2023)"
+          },
+          {
+            "label": "Sensor de Pedalada",
+            "value": "Sensor de cadência magnético de alta precisão"
+          }
+        ]
+      },
+      {
+        "title": "Bateria & Energia",
+        "items": [
+          {
+            "label": "Composição",
+            "value": "Íons de Lítio (36V 10.4Ah)"
+          },
+          {
+            "label": "Capacidade",
+            "value": "374 Wh Removível"
+          },
+          {
+            "label": "Autonomia por Carga",
+            "value": "Até 50 km em modo Eco"
+          },
+          {
+            "label": "Tempo de Recarga",
+            "value": "5 a 6 horas (Bivolt)"
+          },
+          {
+            "label": "Removível",
+            "value": "Sim, com chave de segurança"
+          }
+        ]
+      },
+      {
+        "title": "Quadro, Suspensão & Pneus",
+        "items": [
+          {
+            "label": "Material do Quadro",
+            "value": "Alumínio 6061 T6 Hidroformado"
+          },
+          {
+            "label": "Garfo Dianteiro",
+            "value": "Suspensão Conforto 50mm"
+          },
+          {
+            "label": "Medida dos Pneus",
+            "value": "Aro 27.5\" x 1.95\" Urbano"
+          },
+          {
+            "label": "Peso do Conjunto",
+            "value": "23.5 kg"
+          },
+          {
+            "label": "Capacidade de Carga",
+            "value": "120 kg máximo"
+          }
+        ]
+      },
+      {
+        "title": "Transmissão & Freios",
+        "items": [
+          {
+            "label": "Sistema de Transmissão",
+            "value": "Shimano Tourney 7 Velocidades"
+          },
+          {
+            "label": "Trocadores de Marcha",
+            "value": "Shimano RevoShift / RapidFire 7v"
+          },
+          {
+            "label": "Freios Dianteiro / Traseiro",
+            "value": "Freios a Disco 160mm"
+          },
+          {
+            "label": "Corte de Energia",
+            "value": "Sensores elétricos nos manetes"
+          }
+        ]
+      }
+    ],
+    "maiorPreco": 3999,
+    "badge": "Melhor Custo-Benefício Urbano",
+    "createdAt": "2026-09-04T16:58:38.200Z",
+    "marca": "Xplore",
+    "autonomiaKm": 50,
+    "pros": [
+      "Motor elétrico de 350W com entrega suave e torque linear para subidas",
+      "Bateria de lítio removível com chave de proteção contra furto e recarga prática",
+      "Quadro resistente em liga de alumínio com ergonomia adaptada para vias brasileiras"
+    ],
+    "verdict": "A Xplore Xplore Urban é uma bicicleta elétrica projetada para o segmento urbana, combinando motor elétrico de 350W com autonomia estimada de 50 km por carga. O conjunto entrega assistência progressiva ao pedal, quadro balanceado e confiabilidade para deslocamentos diários no Brasil.",
+    "idealFor": "Ciclistas que buscam agilidade na mobilidade diária, economia no transporte e facilidade para vencer subidas e distâncias urbanas.",
+    "tempoCargaHoras": 5,
+    "resumoExecutivo": "A Xplore Xplore Urban é uma bicicleta elétrica projetada para o segmento urbana, combinando motor elétrico de 350W com autonomia estimada de 50 km por carga. O conjunto entrega assistência progressiva ao pedal, quadro balanceado e confiabilidade para deslocamentos diários no Brasil.",
+    "slug": "xplore-xplore-urban",
+    "cons": [
+      "Tempo de recarga padrão de cerca de 5 horas para ciclo completo",
+      "Requer calibragem periódica da pressão dos pneus para otimizar autonomia"
+    ],
+    "imagemUrl": "/images/bikes/xplore-xplore-urban.webp",
+    "galleryImages": []
+  }
+]

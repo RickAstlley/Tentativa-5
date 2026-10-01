@@ -1,0 +1,37 @@
+node_modules/
+.next/
+coverage/
+.DS_Store
+*.log
+.env*
+!.env.example
+
+# Arquivos temporários e pastas duplicadas de upload
+Admin-2-main/
+admin-standalone-package/
+*.tar.gz
+*.zip
+tsconfig.tsbuildinfo
+
+# Credenciais privadas do Firebase/Google — nunca versionar ou empacotar
+serviceAccountKey.json
+data/serviceAccountKey.json
+firebase-service-account.json
+firebase-admin.json
+firebase-key.json
+service-account.json
+google-credentials.json
+serviceAccount.json
+
+# Credenciais e artefatos de runtime (nunca versionados)
+firebase-applet-config.json
+*.private.json
+data/llm_metrics.json
+data/orchestrator.lock
+data/orchestrator_state.json
+data/media_cache/
+public/sitemap.xml
+
+# Saída do cron do pipeline de IA
+data/cron.log
+data/cron-ai-pipeline.lock

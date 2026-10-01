@@ -1,0 +1,22 @@
+{
+  "lastSync": "2026-09-01T12:39:05.183Z",
+  "intervalMinutes": 30,
+  "syncedArticlesCount": 0,
+  "syncedBikesCount": 0,
+  "syncedRankingsCount": 0,
+  "savedToDiskArticlesCount": 0,
+  "savedToDiskBikesCount": 0,
+  "savedToDiskRankingsCount": 0,
+  "uploadedToFirestoreArticlesCount": 0,
+  "uploadedToFirestoreBikesCount": 0,
+  "uploadedToFirestoreRankingsCount": 0,
+  "totalDiskArticles": 3,
+  "totalDiskBikes": 4,
+  "totalDiskRankings": 0,
+  "missingArticlesCount": 0,
+  "missingBikesCount": 0,
+  "status": "success",
+  "syncedArticleSlugs": [],
+  "syncedBikeSlugs": [],
+  "message": "Todos os artigos, e-bikes e rankings estão 100% sincronizados entre o Firestore e o disco da Hostinger (ciclo 30 min)."
+}
