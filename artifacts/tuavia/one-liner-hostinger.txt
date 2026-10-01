@@ -1,0 +1,11 @@
+# ============================================
+# COMANDO ÚNICO PARA COPIAR E COLAR NO HOSTINGER
+# ============================================
+# Abra o Terminal SSH no painel Hostinger e cole TUDO abaixo:
+
+cd /home/u642036020/domains/tuavia.com.br/nodejs && mkdir -p ../logs ../data && echo '[]' > ../data/llm_jobs.json 2>/dev/null; npm install -g pm2 2>/dev/null; pm2 delete tua-via-worker tua-via-app 2>/dev/null; pm2 start scripts/process-llm-jobs.mjs --name "tua-via-worker" --cwd /home/u642036020/domains/tuavia.com.br/nodejs --interpreter node --max-memory-restart 500M --min-uptime 10s --max-restarts 10 --restart-delay 5000 --error /home/u642036020/domains/tuavia.com.br/logs/worker-error.log --output /home/u642036020/domains/tuavia.com.br/logs/worker-out.log --log-date-format "YYYY-MM-DD HH:mm:ss Z" --kill-timeout 5000 --wait-ready --listen-timeout 10000; pm2 start server.js --name "tua-via-app" --cwd /home/u642036020/domains/tuavia.com.br/nodejs --interpreter node --max-memory-restart 1G --error /home/u642036020/domains/tuavia.com.br/logs/app-error.log --output /home/u642036020/domains/tuavia.com.br/logs/app-out.log --log-date-format "YYYY-MM-DD HH:mm:ss Z"; pm2 save; pm2 startup systemd -u u642036020 --hp /home/u642036020; pm2 list; echo "✅ Worker e App iniciados! Logs: pm2 logs tua-via-worker"
+
+# ============================================
+# DEPOIS DE RODAR, VERIFIQUE OS LOGS:
+# pm2 logs tua-via-worker --lines 30
+# ============================================

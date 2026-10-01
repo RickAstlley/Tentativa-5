@@ -1,0 +1,26 @@
+{
+  "name": "workspace",
+  "version": "0.0.0",
+  "license": "MIT",
+  "private": true,
+  "//workspaces": "Só artifacts/tuavia entra aqui. Os demais pacotes do pnpm-workspace.yaml usam dependências `catalog:`, protocolo que o npm não resolve — incluí-los quebraria a instalação com npm, que é o que a hospedagem usa. `artifacts/tuavia` não tem nenhuma dependência de workspace e é autossuficiente.",
+  "workspaces": [
+    "artifacts/tuavia"
+  ],
+  "scripts": {
+    "preinstall": "node scripts/guard-install.mjs",
+    "build": "node scripts/build-deploy.mjs",
+    "start": "node scripts/start-deploy.mjs",
+    "typecheck:libs": "tsc --build",
+    "typecheck": "pnpm run typecheck:libs && pnpm -r --filter \"./artifacts/**\" --filter \"./scripts\" --if-present run typecheck",
+    "//typecheck": "Mantido em pnpm de propósito: `tsc --build` no root percorre lib/db, lib/api-client-react e lib/api-zod, que só instalam via pnpm. O build de produção não depende disto (next.config.ts usa typescript.ignoreBuildErrors).",
+    "build:app": "npm run build --workspace artifacts/tuavia"
+  },
+  "dependencies": {
+    "@replit/connectors-sdk": "^0.4.3"
+  },
+  "devDependencies": {
+    "prettier": "^3.9.6",
+    "typescript": "~5.9.3"
+  }
+}

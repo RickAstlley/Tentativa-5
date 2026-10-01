@@ -1,0 +1,74 @@
+{
+  "pautas": [
+    {
+      "id": "pauta_1788386727562_ed_1",
+      "title": "Oferta Especial: E-Bikes Urbanas Oggi e Sense com Cupons de até 15% OFF",
+      "summary": "Principais revendedores nacionais abriram cupons sazonais para modelos urbanos com bateria integrada.",
+      "whyRelevant": "Oportunidade real de compra para quem busca migrar para o transporte sustentável no Brasil.",
+      "keyPoints": [
+        "Desconto imediato em lojas parceiras",
+        "Modelos com motor de 250W e 350W",
+        "Garantia nacional oficial"
+      ],
+      "sourceUrl": "https://tuavia.com.br/promocoes",
+      "sourceName": "Radar TuaVia Promoções",
+      "category": "Promoções",
+      "suggestedKeywords": [
+        "promoção hoje",
+        "cupom e-bike",
+        "desconto bicicleta elétrica",
+        "menor preço"
+      ],
+      "createdAt": "2026-09-02T22:05:27.562Z",
+      "starred": false,
+      "impactLevel": "alto"
+    },
+    {
+      "id": "pauta_1788386727562_ed_2",
+      "title": "Resolução CONTRAN e Ciclovias: O Guia Definitivo para Evitar Multas em 2026",
+      "summary": "Esclarecimento prático sobre velocidade máxima permitida, acelerador versus pedal assistido e equipamentos obrigatórios.",
+      "whyRelevant": "Pauta com altíssimo volume de busca orgânica no Google Brasil.",
+      "keyPoints": [
+        "Diferença entre autopropelido e ciclomotor",
+        "Itens obrigatórios por lei",
+        "Onde circular com segurança"
+      ],
+      "sourceUrl": "https://tuavia.com.br/legislacao",
+      "sourceName": "Radar Editorial TuaVia",
+      "category": "Legislação",
+      "suggestedKeywords": [
+        "contran e-bike",
+        "legislação bicicleta elétrica",
+        "regras ciclovia 2026"
+      ],
+      "createdAt": "2026-09-02T22:05:27.562Z",
+      "starred": false,
+      "impactLevel": "alto"
+    },
+    {
+      "id": "pauta_1788386727562_ed_3",
+      "title": "Lançamentos E-MTB 2026: Motores Mid-Drive de Alto Torque Chegam ao Brasil",
+      "summary": "Novas bicicletas elétricas de montanha contam com sensores de torque mais responsivos e autonomias acima de 80 km.",
+      "whyRelevant": "Mercado de mountain bike elétrica em forte expansão entre ciclistas de trilha.",
+      "keyPoints": [
+        "Motores centrais de alta eficiência",
+        "Baterias de 500Wh a 750Wh",
+        "Comparativo de custo-benefício"
+      ],
+      "sourceUrl": "https://tuavia.com.br/guias",
+      "sourceName": "Radar de Tecnologia TuaVia",
+      "category": "Guia de Compra",
+      "suggestedKeywords": [
+        "e-mtb brasil",
+        "motor central e-bike",
+        "melhor bicicleta elétrica trilha"
+      ],
+      "createdAt": "2026-09-02T22:05:27.562Z",
+      "starred": false,
+      "impactLevel": "tendencia"
+    }
+  ],
+  "lastScanAt": "2026-09-02T22:04:14.090Z",
+  "lastCleanupAt": null,
+  "statusMessage": "Varredura NVIDIA NIM concluída! 3 nova(s) pauta(s)/promoção(ões) encontrada(s). Total: 3."
+}

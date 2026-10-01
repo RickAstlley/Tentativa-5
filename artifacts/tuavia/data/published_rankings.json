@@ -1,0 +1,419 @@
+[
+  {
+    "itens": [
+      {
+        "id": "item-1788993896423-1",
+        "posicao": 1,
+        "tituloItem": "Mymax Myway 4.0",
+        "marca": "Mymax",
+        "categoriaItem": "E-Bike Urbana",
+        "notaDestaque": "Campeã Geral em Custo-Benefício e Rede de Assistência",
+        "pontosPositivos": [
+          "Motor elétrico de 350W com entrega suave e torque linear para subidas",
+          "Bateria de lítio removível com chave de proteção contra furto e recarga prática",
+          "Quadro resistente em liga de alumínio com ergonomia adaptada para vias brasileiras"
+        ],
+        "pontosNegativos": [
+          "Tempo de recarga padrão de cerca de 5 horas para ciclo completo",
+          "Requer calibragem periódica da pressão dos pneus para otimizar autonomia"
+        ],
+        "especificacoes": {
+          "Potência do Motor": "350W",
+          "Autonomia Média": "45 km",
+          "Peso Total": "24.5 kg",
+          "Tempo de Recarga": "5h",
+          "Uso Indicado": "Urbana"
+        },
+        "faixaPrecoEstimado": "R$ 2.861,5 - R$ 2.861,5",
+        "imagemUrl": "/images/bikes/mymax-myway-4-0.webp",
+        "lojas": [
+          {
+            "id": "store-mymax-myway-4-0-0",
+            "nomeLoja": "Mercado Livre",
+            "preco": 2861.5,
+            "url": "https://meli.la/2j9dmHu",
+            "destaque": true
+          }
+        ],
+        "linkLoja1": {
+          "nomeLoja": "Mercado Livre",
+          "preco": 2861.5,
+          "url": "https://meli.la/2j9dmHu"
+        },
+        "observacoes": "A Mymax Myway 4.0 é uma bicicleta elétrica projetada para o segmento urbana, combinando motor elétrico de 350W com autonomia estimada de 45 km por carga. O conjunto entrega assistência progressiva ao pedal, quadro balanceado e confiabilidade para deslocamentos diários no Brasil.",
+        "bikeSlug": "mymax-myway-4-0",
+        "priceHistory": [
+          {
+            "month": "Abr/26",
+            "price": 3120,
+            "lowestPrice": 2861.5
+          },
+          {
+            "month": "Mai/26",
+            "price": 3060,
+            "lowestPrice": 2861.5
+          },
+          {
+            "month": "Jun/26",
+            "price": 3000,
+            "lowestPrice": 2861.5
+          },
+          {
+            "month": "Jul/26",
+            "price": 2950,
+            "lowestPrice": 2861.5
+          },
+          {
+            "month": "Ago/26",
+            "price": 2890,
+            "lowestPrice": 2861.5
+          },
+          {
+            "month": "Set/26",
+            "price": 2861.5,
+            "lowestPrice": 2861.5
+          }
+        ],
+        "menorPreco": 2861.5,
+        "maiorPreco": 2861.5,
+        "potenciaW": 350,
+        "autonomiaKm": 45,
+        "pesoKg": 24.5,
+        "tempoCargaHoras": 5
+      },
+      {
+        "id": "item-1788993896902-2",
+        "posicao": 2,
+        "tituloItem": "Two Dogs Pliage 48V 350W (2024)",
+        "marca": "Two Dogs",
+        "categoriaItem": "E-Bike Dobrável",
+        "notaDestaque": "Melhor Dobrável Multimodal com Conformidade CONTRAN Plena",
+        "pontosPositivos": [
+          "Motor elétrico de 350W com entrega suave e torque linear para subidas",
+          "Bateria de lítio removível com chave de proteção contra furto e recarga prática",
+          "Quadro resistente em liga de alumínio com ergonomia adaptada para vias brasileiras"
+        ],
+        "pontosNegativos": [
+          "Tempo de recarga padrão de cerca de 6 horas para ciclo completo",
+          "Requer calibragem periódica da pressão dos pneus para otimizar autonomia"
+        ],
+        "especificacoes": {
+          "Potência do Motor": "350W",
+          "Autonomia Média": "55 km",
+          "Peso Total": "24.5 kg",
+          "Tempo de Recarga": "6h",
+          "Uso Indicado": "Dobrável"
+        },
+        "faixaPrecoEstimado": "R$ 2.509 - R$ 2.509",
+        "imagemUrl": "/images/bikes/two-dogs-pliage-48v-350w-2024.webp",
+        "lojas": [
+          {
+            "id": "store-two-dogs-pliage-48v-350w-2024-0",
+            "nomeLoja": "Mercado livre",
+            "preco": 2509,
+            "url": "https://meli.la/19rzjHm",
+            "destaque": true
+          }
+        ],
+        "linkLoja1": {
+          "nomeLoja": "Mercado livre",
+          "preco": 2509,
+          "url": "https://meli.la/19rzjHm"
+        },
+        "observacoes": "A Two Dogs Pliage 48V 350W (2024) é uma bicicleta elétrica projetada para o segmento dobrável, combinando motor elétrico de 350W com autonomia estimada de 55 km por carga. O conjunto entrega assistência progressiva ao pedal, quadro balanceado e confiabilidade para deslocamentos diários no Brasil.",
+        "bikeSlug": "two-dogs-pliage-48v-350w-2024",
+        "priceHistory": [
+          {
+            "month": "Abr/26",
+            "price": 2730,
+            "lowestPrice": 2509
+          },
+          {
+            "month": "Mai/26",
+            "price": 2680,
+            "lowestPrice": 2509
+          },
+          {
+            "month": "Jun/26",
+            "price": 2630,
+            "lowestPrice": 2509
+          },
+          {
+            "month": "Jul/26",
+            "price": 2580,
+            "lowestPrice": 2509
+          },
+          {
+            "month": "Ago/26",
+            "price": 2530,
+            "lowestPrice": 2509
+          },
+          {
+            "month": "Set/26",
+            "price": 2509,
+            "lowestPrice": 2509
+          }
+        ],
+        "menorPreco": 2509,
+        "maiorPreco": 2509,
+        "potenciaW": 350,
+        "autonomiaKm": 55,
+        "pesoKg": 24.5,
+        "tempoCargaHoras": 6
+      },
+      {
+        "id": "item-1788993897361-3",
+        "posicao": 3,
+        "tituloItem": "Honeywhale B20",
+        "marca": "Honeywhale",
+        "categoriaItem": "E-Bike Urbana",
+        "notaDestaque": "Melhor Autonomia da Categoria para Trajetos Longos",
+        "pontosPositivos": [
+          "Motor elétrico de 350W com entrega suave e torque linear para subidas",
+          "Bateria de lítio removível com chave de proteção contra furto e recarga prática",
+          "Quadro resistente em liga de alumínio com ergonomia adaptada para vias brasileiras"
+        ],
+        "pontosNegativos": [
+          "Tempo de recarga padrão de cerca de 5 horas para ciclo completo",
+          "Requer calibragem periódica da pressão dos pneus para otimizar autonomia"
+        ],
+        "especificacoes": {
+          "Potência do Motor": "350W",
+          "Autonomia Média": "40 km",
+          "Peso Total": "22 kg",
+          "Tempo de Recarga": "5h",
+          "Uso Indicado": "Urbana"
+        },
+        "faixaPrecoEstimado": "R$ 2.469 - R$ 2.469",
+        "imagemUrl": "/images/bikes/honeywhale-b20.webp",
+        "lojas": [
+          {
+            "id": "store-honeywhale-b20-0",
+            "nomeLoja": "Mercado Livre",
+            "preco": 2469,
+            "url": "https://meli.la/1Pzuf26",
+            "destaque": true
+          }
+        ],
+        "linkLoja1": {
+          "nomeLoja": "Mercado Livre",
+          "preco": 2469,
+          "url": "https://meli.la/1Pzuf26"
+        },
+        "observacoes": "A Honeywhale B20 é uma bicicleta elétrica projetada para o segmento urbana, combinando motor elétrico de 350W com autonomia estimada de 40 km por carga. O conjunto entrega assistência progressiva ao pedal, quadro balanceado e confiabilidade para deslocamentos diários no Brasil.",
+        "bikeSlug": "honeywhale-b20",
+        "priceHistory": [
+          {
+            "month": "Abr/26",
+            "price": 2690,
+            "lowestPrice": 2469
+          },
+          {
+            "month": "Mai/26",
+            "price": 2640,
+            "lowestPrice": 2469
+          },
+          {
+            "month": "Jun/26",
+            "price": 2590,
+            "lowestPrice": 2469
+          },
+          {
+            "month": "Jul/26",
+            "price": 2540,
+            "lowestPrice": 2469
+          },
+          {
+            "month": "Ago/26",
+            "price": 2490,
+            "lowestPrice": 2469
+          },
+          {
+            "month": "Set/26",
+            "price": 2469,
+            "lowestPrice": 2469
+          }
+        ],
+        "menorPreco": 2469,
+        "maiorPreco": 2469,
+        "potenciaW": 350,
+        "autonomiaKm": 40,
+        "pesoKg": 22,
+        "tempoCargaHoras": 5
+      },
+      {
+        "id": "item-1788993897864-4",
+        "posicao": 4,
+        "tituloItem": "Xplore Xplore Urban",
+        "marca": "Xplore",
+        "categoriaItem": "E-Bike Urbana",
+        "notaDestaque": "Melhor Conforto de Pilotagem e Ergonomia Urbana",
+        "pontosPositivos": [
+          "Motor elétrico de 350W com entrega suave e torque linear para subidas",
+          "Bateria de lítio removível com chave de proteção contra furto e recarga prática",
+          "Quadro resistente em liga de alumínio com ergonomia adaptada para vias brasileiras"
+        ],
+        "pontosNegativos": [
+          "Tempo de recarga padrão de cerca de 5 horas para ciclo completo",
+          "Requer calibragem periódica da pressão dos pneus para otimizar autonomia"
+        ],
+        "especificacoes": {
+          "Potência do Motor": "350W",
+          "Autonomia Média": "50 km",
+          "Peso Total": "23.5 kg",
+          "Tempo de Recarga": "5h",
+          "Uso Indicado": "Urbana"
+        },
+        "faixaPrecoEstimado": "R$ 3.999 - R$ 3.999",
+        "imagemUrl": "/images/bikes/xplore-xplore-urban.webp",
+        "lojas": [
+          {
+            "id": "store-xplore-xplore-urban-0",
+            "nomeLoja": "Mercado Livre",
+            "preco": 3999,
+            "url": "https://meli.la/2sNWBSj",
+            "destaque": true
+          }
+        ],
+        "linkLoja1": {
+          "nomeLoja": "Mercado Livre",
+          "preco": 3999,
+          "url": "https://meli.la/2sNWBSj"
+        },
+        "observacoes": "A Xplore Xplore Urban é uma bicicleta elétrica projetada para o segmento urbana, combinando motor elétrico de 350W com autonomia estimada de 50 km por carga. O conjunto entrega assistência progressiva ao pedal, quadro balanceado e confiabilidade para deslocamentos diários no Brasil.",
+        "bikeSlug": "xplore-xplore-urban",
+        "priceHistory": [
+          {
+            "month": "Abr/26",
+            "price": 4360,
+            "lowestPrice": 3999
+          },
+          {
+            "month": "Mai/26",
+            "price": 4280,
+            "lowestPrice": 3999
+          },
+          {
+            "month": "Jun/26",
+            "price": 4200,
+            "lowestPrice": 3999
+          },
+          {
+            "month": "Jul/26",
+            "price": 4120,
+            "lowestPrice": 3999
+          },
+          {
+            "month": "Ago/26",
+            "price": 4040,
+            "lowestPrice": 3999
+          },
+          {
+            "month": "Set/26",
+            "price": 3999,
+            "lowestPrice": 3999
+          }
+        ],
+        "menorPreco": 3999,
+        "maiorPreco": 3999,
+        "potenciaW": 350,
+        "autonomiaKm": 50,
+        "pesoKg": 23.5,
+        "tempoCargaHoras": 5
+      },
+      {
+        "id": "item-1788993898375-5",
+        "posicao": 5,
+        "tituloItem": "Yoo Mobility Y-200",
+        "marca": "Yoo Mobility",
+        "categoriaItem": "E-Bike Urbana",
+        "notaDestaque": "Melhor Opção de Entrada para Iniciantes na Mobilidade Elétrica",
+        "pontosPositivos": [
+          "Motor elétrico de 350W com entrega suave e torque linear para subidas",
+          "Bateria de lítio removível com chave de proteção contra furto e recarga prática",
+          "Quadro resistente em liga de alumínio com ergonomia adaptada para vias brasileiras"
+        ],
+        "pontosNegativos": [
+          "Tempo de recarga padrão de cerca de 5 horas para ciclo completo",
+          "Requer calibragem periódica da pressão dos pneus para otimizar autonomia"
+        ],
+        "especificacoes": {
+          "Potência do Motor": "350W",
+          "Autonomia Média": "45 km",
+          "Peso Total": "22.5 kg",
+          "Tempo de Recarga": "5h",
+          "Uso Indicado": "Urbana"
+        },
+        "faixaPrecoEstimado": "R$ 3.199 - R$ 3.199",
+        "imagemUrl": "/images/bikes/yoo-mobility-y-200.webp",
+        "lojas": [
+          {
+            "id": "store-yoo-mobility-y-200-0",
+            "nomeLoja": "Mercado Livre",
+            "preco": 3199,
+            "url": "https://meli.la/2cQrQxx",
+            "destaque": true
+          }
+        ],
+        "linkLoja1": {
+          "nomeLoja": "Mercado Livre",
+          "preco": 3199,
+          "url": "https://meli.la/2cQrQxx"
+        },
+        "observacoes": "A Yoo Mobility Y-200 é uma bicicleta elétrica projetada para o segmento urbana, combinando motor elétrico de 350W com autonomia estimada de 45 km por carga. O conjunto entrega assistência progressiva ao pedal, quadro balanceado e confiabilidade para deslocamentos diários no Brasil.",
+        "bikeSlug": "yoo-mobility-y-200",
+        "priceHistory": [
+          {
+            "month": "Abr/26",
+            "price": 3490,
+            "lowestPrice": 3199
+          },
+          {
+            "month": "Mai/26",
+            "price": 3420,
+            "lowestPrice": 3199
+          },
+          {
+            "month": "Jun/26",
+            "price": 3360,
+            "lowestPrice": 3199
+          },
+          {
+            "month": "Jul/26",
+            "price": 3290,
+            "lowestPrice": 3199
+          },
+          {
+            "month": "Ago/26",
+            "price": 3230,
+            "lowestPrice": 3199
+          },
+          {
+            "month": "Set/26",
+            "price": 3199,
+            "lowestPrice": 3199
+          }
+        ],
+        "menorPreco": 3199,
+        "maiorPreco": 3199,
+        "potenciaW": 350,
+        "autonomiaKm": 45,
+        "pesoKg": 22.5,
+        "tempoCargaHoras": 5
+      }
+    ],
+    "subtitulo": "Análise técnica comparativa avaliando custo-benefício, rede de assistência técnica no Brasil e conformidade total com a Resolução CONTRAN 996/2023.",
+    "atualizadoEm": "2026-09-09T22:46:41.333Z",
+    "categoria": "ebikes",
+    "titulo": "Top 5 Melhores E-Bikes Urbanas para Mobilidade Diária em 2026",
+    "conclusaoGeral": "Para o uso diário urbano em 2026, a escolha ideal combina conformidade legal plena (motor até 350W e velocidade máxima de 25 km/h), bateria removível para recarga em casa ou no trabalho e uma marca com rede de suporte consolidada no Brasil. A Mymax Myway 4.0 lidera pelo equilíbrio entre preço, autonomia e pós-venda, enquanto a Two Dogs Pliage é a alternativa imbatível para quem integra bike + transporte público. Modelos acima de 350W, embora potentes, exigem registro e habilitação, fugindo do perfil de praticidade buscado neste ranking.",
+    "autor": "Equipe TuaVia",
+    "criterioAvaliacao": "Avaliamos potência dentro do limite legal de 350W e 25 km/h (isenção de registro e habilitação), autonomia real de bateria, qualidade de freios e componentes, disponibilidade de peças de reposição e capilaridade da assistência técnica autorizada no território nacional.",
+    "dataAtualizacao": "2026-09-09",
+    "quantidadeItens": 5,
+    "tipoRanking": "top5",
+    "id": "rank-1788994000963",
+    "publicado": true,
+    "slug": "top-5-melhores-e-bikes-urbanas-para-mobilidade-diaria-em-2026"
+  }
+]

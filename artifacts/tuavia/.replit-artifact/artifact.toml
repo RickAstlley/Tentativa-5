@@ -1,0 +1,36 @@
+kind = "web"
+previewPath = "/"
+title = "TuaVia"
+description = "Portal brasileiro de comparação e análise técnica de bicicletas elétricas, com catálogo, guias e ferramentas de compra."
+version = "1.0.0"
+id = "artifacts/tuavia"
+router = "path"
+
+[[services]]
+name = "web"
+paths = ["/"]
+localPort = 20440
+
+[services.development]
+run = "pnpm --filter @workspace/tuavia run dev"
+
+[services.production.build]
+args = ["pnpm", "--filter", "@workspace/tuavia", "run", "build"]
+
+[services.production.build.env]
+NODE_ENV = "production"
+
+[services.production.run]
+args = ["pnpm", "--filter", "@workspace/tuavia", "run", "start:standalone"]
+
+[services.production.run.env]
+NODE_ENV = "production"
+PORT = "20440"
+HOSTNAME = "0.0.0.0"
+
+[services.production.health.startup]
+path = "/"
+
+[services.env]
+PORT = "20440"
+BASE_PATH = "/"
