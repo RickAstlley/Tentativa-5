@@ -51,6 +51,7 @@ import {
 } from '@/lib/admin/fileIngestion';
 import { fetchAdminJson, ApiResponseResult } from '@/lib/apiResponse';
 import { CANONICAL_SPEC_SECTIONS } from '@/lib/specAllocations';
+import SpecAllocationReview from '@/components/admin/SpecAllocationReview';
 import {
   runDeterministicExtraction,
   findSpecGaps,
@@ -196,6 +197,18 @@ export default function FileIngestionDropzone({
     if (!currentCache && !ingestedPayload) return null;
     return auditIngestionQuality(targetData, rawText);
   }, [mode, currentCache, ingestedPayload]);
+
+  /**
+   * Resultado da última alocação, para o painel de conferência.
+   *
+   * Fica em estado e não no cache porque `specGaps` e o score saem da auditoria
+   * e não são recalculáveis a partir do que foi salvo.
+   */
+  const [review, setReview] = useState<{
+    gaps: SpecGap[];
+    integrityScore: number;
+    truncated: boolean;
+  } | null>(null);
 
   // Buracos da ficha do fabricante: campos do template que sobraram vazios.
   //
@@ -569,6 +582,12 @@ export default function FileIngestionDropzone({
       setCurrentCache(mergedCache);
       emitConsolidatedData(mergedCache);
       refreshCachesList();
+
+      setReview({
+        gaps: result.gaps,
+        integrityScore: result.stats.integrityScore,
+        truncated: result.stats.truncated,
+      });
 
       const { filledItems, totalCanonicalItems, gapCount, integrityScore } = result.stats;
       setSuccessMessage(
@@ -978,8 +997,20 @@ export default function FileIngestionDropzone({
                     })()}
                   </div>
 
+                  {/* PAINEL DE CONFERÊNCIA DA ALOCAÇÃO (e-bike) */}
+                  {mode === 'ebike' && showModularMonitor && (
+                    <SpecAllocationReview
+                      specSections={currentCache?.specSections ?? []}
+                      gaps={review?.gaps ?? specGaps}
+                      rawText={currentCache?.rawText ?? ingestedPayload?.rawText ?? ''}
+                      integrityScore={review?.integrityScore ?? 0}
+                      truncated={(review?.truncated ?? false) || (currentCache?.extractionWarnings?.length ?? 0) > 0}
+                      truncatedWarning={currentCache?.extractionWarnings?.[0]}
+                    />
+                  )}
+
                   {/* GRID DOS 10 BLOCOS CANÔNICOS + EDITORIAL */}
-                  {showModularMonitor && (
+                  {mode !== 'ebike' && showModularMonitor && (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2.5 pt-1">
                       {modularBlocks.map((block) => {
                         const isRunning = block.status === 'running' || currentActiveBlock === block.index;
