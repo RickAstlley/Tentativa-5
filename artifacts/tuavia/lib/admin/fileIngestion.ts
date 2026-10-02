@@ -77,21 +77,71 @@ export function detectDocumentKind(text: string, fileName?: string): 'ebike' | '
 /**
  * Lê o conteúdo em texto de um File com tolerância a encodings (UTF-8 e fallback FileReader)
  */
+/**
+ * Teto para arquivos de texto puro.
+ *
+ * `file.text()` carrega o arquivo inteiro na memória sem reclamar. Um .txt de
+ * 200 MB travava a aba do navegador antes de qualquer erro aparecer. Acima
+ * disso a ingestão não faz sentido para ficha técnica, então corta com aviso.
+ */
+const MAX_TEXT_BYTES = 20 * 1024 * 1024;
+
+/**
+ * Descobre a codificação do buffer e decodifica.
+ *
+ * O caminho antigo usava `readAsText(file, 'utf-8')` fixo. Ficha técnica
+ * exportada de Excel ou Word no Brasil é Latin-1 / Windows-1252, não UTF-8, e
+ * virava mojibake: "Disco Hidráulico" saía "Disco Hidr\ufffdulico". O matcher
+ * de especificações normaliza acento e ainda encontra o campo certo, então o
+ * bug passava despercebido no score — mas o VALOR gravado na ficha ia
+ * corrompido para o site.
+ *
+ * A ordem de tentativa: BOM manda; depois UTF-8 estrito, que só passa se o
+ * arquivo for de fato UTF-8; e na falha, Windows-1252, que é o superconjunto
+ * do Latin-1 e o que o Office brasileiro grava.
+ */
+function decodeTextBuffer(buffer: ArrayBuffer): string {
+  const bytes = new Uint8Array(buffer);
+
+  // BOM explícito: UTF-8, UTF-16 LE e UTF-16 BE.
+  if (bytes.length >= 3 && bytes[0] === 0xef && bytes[1] === 0xbb && bytes[2] === 0xbf) {
+    return new TextDecoder('utf-8').decode(bytes.subarray(3));
+  }
+  if (bytes.length >= 2 && bytes[0] === 0xff && bytes[1] === 0xfe) {
+    return new TextDecoder('utf-16le').decode(bytes.subarray(2));
+  }
+  if (bytes.length >= 2 && bytes[0] === 0xfe && bytes[1] === 0xff) {
+    return new TextDecoder('utf-16be').decode(bytes.subarray(2));
+  }
+
+  // UTF-8 estrito: `fatal` faz o decoder lançar em byte inválido, que é
+  // exatamente a assinatura de um arquivo Latin-1.
+  try {
+    return new TextDecoder('utf-8', { fatal: true }).decode(bytes);
+  } catch {
+    return new TextDecoder('windows-1252').decode(bytes);
+  }
+}
+
 async function readFileAsText(file: File): Promise<string> {
-  if (typeof file.text === 'function') {
-    try {
-      const txt = await file.text();
-      if (txt) return txt;
-    } catch (e) {
-      console.warn('[fileIngestion] file.text() falhou, tentando FileReader:', e);
-    }
+  if (file.size > MAX_TEXT_BYTES) {
+    throw new Error(
+      `Arquivo de texto grande demais (${(file.size / 1024 / 1024).toFixed(1)} MB, ` +
+        `limite ${MAX_TEXT_BYTES / 1024 / 1024} MB). Se for uma ficha com muitas páginas, envie como PDF.`
+    );
+  }
+
+  try {
+    return decodeTextBuffer(await file.arrayBuffer());
+  } catch (e) {
+    console.warn('[fileIngestion] arrayBuffer falhou, tentando FileReader:', e);
   }
 
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
-    reader.onload = () => resolve((reader.result as string) || '');
+    reader.onload = () => resolve(decodeTextBuffer((reader.result as ArrayBuffer) ?? new ArrayBuffer(0)));
     reader.onerror = (err) => reject(new Error('Não foi possível ler o arquivo: ' + (err || 'Erro no leitor')));
-    reader.readAsText(file, 'utf-8');
+    reader.readAsArrayBuffer(file);
   });
 }
 
