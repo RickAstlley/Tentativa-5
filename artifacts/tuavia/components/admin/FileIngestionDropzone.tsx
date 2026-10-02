@@ -206,7 +206,10 @@ export default function FileIngestionDropzone({
     if (mode !== 'ebike') return [];
     const sections = currentCache?.specSections;
     if (!Array.isArray(sections) || sections.length === 0) return [];
-    return findSpecGaps(sections);
+    // Documento truncado não prova ausência: os gaps saem marcados como
+    // "não lido" para a tela não afirmar que o fabricante não informou.
+    const truncado = (currentCache?.extractionWarnings?.length ?? 0) > 0;
+    return findSpecGaps(sections, truncado);
   }, [mode, currentCache]);
 
   // Inicialização e recarga do cache local
@@ -469,6 +472,7 @@ export default function FileIngestionDropzone({
         rawText,
         fileName,
         parsedData: ingestedPayload?.parsedYamlOrJson,
+        truncated: (targetCache?.extractionWarnings?.length ?? 0) > 0,
       });
 
       if (!result.specSections?.length) {
@@ -537,6 +541,7 @@ export default function FileIngestionDropzone({
         specSections: result.specSections,
         editorial: { ...(targetCache?.editorial ?? {}), ...editorial },
         priceHistoryData: result.priceHistoryData ?? targetCache?.priceHistoryData,
+        extractionWarnings: targetCache?.extractionWarnings ?? [],
         completedSteps: Array.from(new Set([...(targetCache?.completedSteps || []), 1, 2, 3])),
         isAllocatedToForm: true,
       };
@@ -1535,8 +1540,22 @@ export default function FileIngestionDropzone({
                       </div>
 
                       <p className="text-[11px] text-neutral-400 leading-relaxed">
-                        Cada linha abaixo está marcada como <span className="text-neutral-300 font-semibold">{UNCONFIRMED_LABEL}</span>{' '}
-                        na ficha. Preencha à mão com fonte verificável.
+                        {specGaps.some((g) => g.truncated) ? (
+                          <>
+                            <span className="font-semibold text-amber-400">
+                              Parte do documento não foi lida.
+                            </span>{' '}
+                            Estes campos podem estar na parte não extraída —{' '}
+                            <strong>ausência aqui não é o fabricante não ter informado</strong>. Abra o
+                            documento e confira antes de marcar como não declarado.
+                          </>
+                        ) : (
+                          <>
+                            Cada linha abaixo está marcada como{' '}
+                            <span className="text-neutral-300 font-semibold">{UNCONFIRMED_LABEL}</span>{' '}
+                            na ficha. Preencha à mão com fonte verificável.
+                          </>
+                        )}
                       </p>
 
                       <div className="space-y-1.5 max-h-72 overflow-y-auto pr-1">

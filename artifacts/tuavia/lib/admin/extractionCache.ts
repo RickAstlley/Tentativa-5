@@ -56,6 +56,14 @@ export interface ExtractionCacheData {
   seoAndMarket?: any;
   images?: ExtractedImageFile[];
   binaryInfo?: any;
+  /**
+   * O documento não foi lido por inteiro (hoje só o PDF pode truncar).
+   *
+   * Fica no cache porque sobrevive ao recarregar a tela: sem ele, um PDF grande
+   * já alocado voltaria a apresentar campo não lido como "não informado pelo
+   * fabricante", que é uma afirmação falsa sobre a ficha.
+   */
+  extractionWarnings?: string[];
   completedSteps: number[]; // [1], [1, 2], [1, 2, 3], [1, 2, 3, 4]
   currentStageLabel?: string;
 }
