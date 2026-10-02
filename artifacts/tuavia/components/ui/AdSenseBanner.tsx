@@ -49,7 +49,6 @@ export default function AdSenseBanner({
   const reactId = useId();
   const containerId = `adsense-${reactId.replace(/:/g, '')}`;
 
-  const insRef = useRef<HTMLElement>(null);
   const pushedRef = useRef(false);
   const [consentGiven, setConsentGiven] = useState(false);
   const [attempted, setAttempted] = useState(false);
@@ -114,7 +113,6 @@ export default function AdSenseBanner({
         )}
       >
         <ins
-          ref={insRef}
           className="adsbygoogle"
           style={{ display: 'block', width: '100%' }}
           data-ad-client="ca-pub-7432900526570149"

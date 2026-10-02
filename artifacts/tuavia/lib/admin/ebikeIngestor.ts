@@ -60,8 +60,14 @@ export interface SpecGap {
   label: string;
   /** Rótulos alternativos do mesmo campo, para deixar claro o que se procura. */
   synonyms: string[];
-  /** Motivo, quando o auditor sabe explicar. */
+  /**
+   * O que a ausência significa.
+   *
+   * `naoDeclarado`: o fabricante não diz isso.
+   * `naoLido`:       o documento não foi lido inteiro, então não sabemos.
+   */
   reason?: string;
+  truncated?: boolean;
 }
 
 export interface IngestionResult {
@@ -94,6 +100,8 @@ export interface IngestionResult {
     gapCount: number;
     /** Score 0-100 do auditor. */
     integrityScore: number;
+    /** O documento não foi lido inteiro: gaps não provam ausência. */
+    truncated: boolean;
     durationMs: number;
   };
 }
@@ -103,16 +111,34 @@ export interface IngestOptions {
   rawText?: string;
   fileName?: string;
   parsedData?: unknown;
+  /**
+   * O documento foi lido só em parte?
+   *
+   * Quando true, o ingestor NÃO pode afirmar 'Não informado pelo fabricante':
+   * ele não leu o documento inteiro, então ausência ali é ausência da
+   * leitura, não do fabricante. Os gaps saem com o motivo `naoLido` e a tela
+   * mostra isso, em vez de apresentar um campo vazio como se fosse dado
+   * confirmado por ausência.
+   */
+  truncated?: boolean;
 }
 
 /* ──────────────────────────── identidade ──────────────────────────── */
 
+/**
+ * Monta a identidade a partir do resultado da varredura.
+ *
+ * Recebe o `deterministic` já calculado em vez de chamar o parser de novo.
+ * Antes ele rodava duas vezes por extração — 50% do tempo jogado fora — e,
+ * pior, as duas chamadas podiam disagree: `buildIdentity` usava
+ * `options.payload?.parsedYamlOrJson`, que o chamador não preenche (ele manda
+ * `parsedData`), então uma via ignorava o YAML/JSON do arquivo e a outra não.
+ * Resultado: identidade com um número e a seção alocada com outro.
+ */
 function buildIdentity(
-  payload: IngestedFilePayload | undefined,
-  rawText: string,
+  deterministic: { identity?: Record<string, unknown> },
   fileName: string
 ): Record<string, unknown> {
-  const deterministic = parseEBikeDeterministic(rawText, payload?.parsedYamlOrJson, fileName);
   const fromFile = decomposeBrandAndModel(fileName);
 
   return {
@@ -258,7 +284,7 @@ function isPlaceholderValue(value: string | undefined | null): boolean {
  * que o documento trouxe é bônus, não obrigação — e item que veio com valor
  * nunca vira buraco, por mais que o documento seja magro.
  */
-export function findSpecGaps(specSections: EBikeSpecSection[]): SpecGap[] {
+export function findSpecGaps(specSections: EBikeSpecSection[], truncated = false): SpecGap[] {
   const gaps: SpecGap[] = [];
 
   specSections.forEach((section, sectionIndex) => {
@@ -274,7 +300,9 @@ export function findSpecGaps(specSections: EBikeSpecSection[]): SpecGap[] {
         sectionTitle: section.title,
         label: item.label,
         synonyms: template.items[itemIndex]?.synonyms ?? [],
-        reason: item.notes || undefined,
+        // Documento cortado não autoriza dizer que o fabricante não falou.
+        reason: truncated ? 'não lido — o documento excedeu o limite de extração' : item.notes || undefined,
+        truncated,
       });
     });
   });
@@ -297,6 +325,7 @@ export function runDeterministicExtraction(options: IngestOptions): IngestionRes
   const rawText = options.rawText ?? options.payload?.rawText ?? '';
   const fileName = options.fileName ?? options.payload?.fileName ?? 'documento.txt';
   const parsedData = options.parsedData ?? options.payload?.parsedYamlOrJson;
+  const truncated = Boolean(options.truncated ?? options.payload?.extractionWarnings?.length);
 
   if (!rawText.trim()) {
     return {
@@ -316,6 +345,7 @@ export function runDeterministicExtraction(options: IngestOptions): IngestionRes
         filledItems: 0,
         gapCount: 0,
         integrityScore: 0,
+        truncated: false,
         durationMs: Date.now() - startedAt,
       },
     };
@@ -324,7 +354,7 @@ export function runDeterministicExtraction(options: IngestOptions): IngestionRes
   // Tabelas markdown viram pares rótulo/valor, formato que o alocador normaliza.
   const flatSpecs = extractMarkdownTablesAndSpecs(rawText);
   const deterministic = parseEBikeDeterministic(rawText, parsedData, fileName);
-  const identity = buildIdentity(options.payload, rawText, fileName);
+  const identity = buildIdentity(deterministic, fileName);
 
   const incomingSections = [
     Object.entries(flatSpecs).map(([label, value]) => ({ label, value: String(value) })),
@@ -346,7 +376,7 @@ export function runDeterministicExtraction(options: IngestOptions): IngestionRes
    */
   const { specSections, auditSummary } = auditEBikeSpecs(stampedSections);
   const audit = auditSummary;
-  const gaps = findSpecGaps(specSections);
+  const gaps = findSpecGaps(specSections, truncated);
 
   const totalItems = specSections.reduce((sum, section) => sum + (section.items?.length ?? 0), 0);
   const editorial = stampEditorialSources(deterministic.editorial ?? {}, specSections, fileName);
@@ -378,6 +408,7 @@ export function runDeterministicExtraction(options: IngestOptions): IngestionRes
       filledItems: totalItems - gaps.length,
       gapCount: gaps.length,
       integrityScore: audit.integrityScore,
+      truncated,
       durationMs: Date.now() - startedAt,
     },
   };

@@ -50,6 +50,14 @@ export interface IngestedFilePayload {
   wordCount?: number;
   detectedKind?: 'ebike' | 'article' | 'ranking';
   binaryInfo?: BinarySignatureInfo;
+  /**
+   * Problemas que impedem a leitura de confiar no texto extraído.
+   *
+   * O caso que importa é o PDF truncado: quando o arquivo não foi lido por
+   * inteiro, campo ausente NÃO significa "o fabricante não informou", e o
+   * ingestor precisa recusar essa afirmação.
+   */
+  extractionWarnings?: string[];
 }
 
 /**
@@ -77,21 +85,71 @@ export function detectDocumentKind(text: string, fileName?: string): 'ebike' | '
 /**
  * Lê o conteúdo em texto de um File com tolerância a encodings (UTF-8 e fallback FileReader)
  */
+/**
+ * Teto para arquivos de texto puro.
+ *
+ * `file.text()` carrega o arquivo inteiro na memória sem reclamar. Um .txt de
+ * 200 MB travava a aba do navegador antes de qualquer erro aparecer. Acima
+ * disso a ingestão não faz sentido para ficha técnica, então corta com aviso.
+ */
+const MAX_TEXT_BYTES = 20 * 1024 * 1024;
+
+/**
+ * Descobre a codificação do buffer e decodifica.
+ *
+ * O caminho antigo usava `readAsText(file, 'utf-8')` fixo. Ficha técnica
+ * exportada de Excel ou Word no Brasil é Latin-1 / Windows-1252, não UTF-8, e
+ * virava mojibake: "Disco Hidráulico" saía "Disco Hidr\ufffdulico". O matcher
+ * de especificações normaliza acento e ainda encontra o campo certo, então o
+ * bug passava despercebido no score — mas o VALOR gravado na ficha ia
+ * corrompido para o site.
+ *
+ * A ordem de tentativa: BOM manda; depois UTF-8 estrito, que só passa se o
+ * arquivo for de fato UTF-8; e na falha, Windows-1252, que é o superconjunto
+ * do Latin-1 e o que o Office brasileiro grava.
+ */
+function decodeTextBuffer(buffer: ArrayBuffer): string {
+  const bytes = new Uint8Array(buffer);
+
+  // BOM explícito: UTF-8, UTF-16 LE e UTF-16 BE.
+  if (bytes.length >= 3 && bytes[0] === 0xef && bytes[1] === 0xbb && bytes[2] === 0xbf) {
+    return new TextDecoder('utf-8').decode(bytes.subarray(3));
+  }
+  if (bytes.length >= 2 && bytes[0] === 0xff && bytes[1] === 0xfe) {
+    return new TextDecoder('utf-16le').decode(bytes.subarray(2));
+  }
+  if (bytes.length >= 2 && bytes[0] === 0xfe && bytes[1] === 0xff) {
+    return new TextDecoder('utf-16be').decode(bytes.subarray(2));
+  }
+
+  // UTF-8 estrito: `fatal` faz o decoder lançar em byte inválido, que é
+  // exatamente a assinatura de um arquivo Latin-1.
+  try {
+    return new TextDecoder('utf-8', { fatal: true }).decode(bytes);
+  } catch {
+    return new TextDecoder('windows-1252').decode(bytes);
+  }
+}
+
 async function readFileAsText(file: File): Promise<string> {
-  if (typeof file.text === 'function') {
-    try {
-      const txt = await file.text();
-      if (txt) return txt;
-    } catch (e) {
-      console.warn('[fileIngestion] file.text() falhou, tentando FileReader:', e);
-    }
+  if (file.size > MAX_TEXT_BYTES) {
+    throw new Error(
+      `Arquivo de texto grande demais (${(file.size / 1024 / 1024).toFixed(1)} MB, ` +
+        `limite ${MAX_TEXT_BYTES / 1024 / 1024} MB). Se for uma ficha com muitas páginas, envie como PDF.`
+    );
+  }
+
+  try {
+    return decodeTextBuffer(await file.arrayBuffer());
+  } catch (e) {
+    console.warn('[fileIngestion] arrayBuffer falhou, tentando FileReader:', e);
   }
 
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
-    reader.onload = () => resolve((reader.result as string) || '');
+    reader.onload = () => resolve(decodeTextBuffer((reader.result as ArrayBuffer) ?? new ArrayBuffer(0)));
     reader.onerror = (err) => reject(new Error('Não foi possível ler o arquivo: ' + (err || 'Erro no leitor')));
-    reader.readAsText(file, 'utf-8');
+    reader.readAsArrayBuffer(file);
   });
 }
 
@@ -564,49 +622,308 @@ export async function readFileAsBase64(file: File): Promise<string> {
 /**
  * Descomprime um bloco de stream PDF /FlateDecode utilizando DecompressionStream nativo
  */
+/**
+ * Teto de memória para varrer o PDF cru.
+ *
+ * Não é mais um limite de leitura: o extrator percorre o arquivo inteiro em
+ * busca dos streams, mas só esse tamanho entra no buffer binário. Acima
+ * disso o que sobrar é declarado truncado, em vez de sumir calado.
+ */
+const PDF_SCAN_LIMIT_BYTES = 64 * 1024 * 1024;
+
+/**
+ * Quantos streams descomprimir por PDF.
+ *
+ * O teto antigo era 40, e um catálogo de 12 páginas com imagem por página
+ * estourava nele — o texto das últimas páginas nunca era lido.
+ */
+const PDF_MAX_STREAMS = 400;
+
+/**
+ * Extrai texto de um stream FlateDecode.
+ *
+ * Os dois `writer.write()`/`writer.close()` são aguardados de propósito: sem
+ * isso as promessas rejeitam quando os bytes não são deflate, e rejeição de
+ * promise não passa pelo `catch` — vira `unhandledRejection`. Toda imagem JPEG
+ * de catálogo é um stream `/DCTDecode`, ou seja, não-deflate, ou seja, uma
+ * rejeição por foto. O `try/catch` de quem chama não pega nada disso.
+ */
 async function decompressPdfFlateStream(compressedBytes: Uint8Array): Promise<string> {
   if (typeof DecompressionStream === 'undefined' || compressedBytes.length < 4) return '';
 
-  // 1. Tenta descompressão com zlib/deflate padrão
-  try {
-    const ds = new DecompressionStream('deflate');
-    const writer = ds.writable.getWriter();
-    writer.write(compressedBytes as any);
-    writer.close();
-    const response = new Response(ds.readable);
-    const buf = await response.arrayBuffer();
-    return new TextDecoder('utf-8', { fatal: false }).decode(buf);
-  } catch {
-    // 2. Fallback: Tenta deflate-raw removendo header zlib de 2 bytes e checksum final
+  const tenta = async (formato: 'deflate' | 'deflate-raw', dados: Uint8Array): Promise<string | null> => {
     try {
-      const ds = new DecompressionStream('deflate-raw');
+      const ds = new DecompressionStream(formato);
       const writer = ds.writable.getWriter();
-      const raw = compressedBytes.length > 6 ? compressedBytes.slice(2, -4) : compressedBytes;
-      writer.write(raw as any);
-      writer.close();
-      const response = new Response(ds.readable);
-      const buf = await response.arrayBuffer();
-      return new TextDecoder('utf-8', { fatal: false }).decode(buf);
+      // Precisa ser awaited: `write` e `close` rejeitam de forma assíncrona.
+      await writer.write(dados as any);
+      await writer.close();
+      const buf = await new Response(ds.readable).arrayBuffer();
+      const bytes = new Uint8Array(buf);
+
+      /**
+       * Conteúdo de PDF NÃO é UTF-8: é PDFDocEncoding ou WinAnsiEncoding,
+       * ambos derivados de Latin-1. Decodificar como UTF-8 troca acento por
+       * U+FFFD — "Potência" virava "Pot\ufffdncia" e o matcher, que depende
+       * de acento, deixava de achar o campo.
+       *
+       * UTF-8 estrito primeiro (alguns geradores emitem UTF-8 real), e na
+       * falha, Latin-1 — que é o caso comum e é o que a spec manda.
+       */
+      try {
+        return new TextDecoder('utf-8', { fatal: true }).decode(bytes);
+      } catch {
+        return new TextDecoder('windows-1252').decode(bytes);
+      }
     } catch {
-      return '';
+      return null;
     }
-  }
+  };
+
+  const direto = await tenta('deflate', compressedBytes);
+  if (direto !== null) return direto;
+
+  // Fallback deflate-raw: sem o header zlib de 2 bytes e sem o checksum final.
+  const raw = compressedBytes.length > 6 ? compressedBytes.slice(2, -4) : compressedBytes;
+  const semHeader = await tenta('deflate-raw', raw);
+  return semHeader ?? '';
 }
 
 /**
- * Extrai texto legível e tabelas de um PDF sem depender de bibliotecas binárias pesadas.
- * Faz descompressão de streams /FlateDecode e extração de operadores Tj, TJ e blocos de texto.
+ * Descobre o /Filter do objeto que contém o stream.
+ *
+ * Sem isto o extrator tenta inflar imagem também: `/DCTDecode` é JPEG cru,
+ * `/JPXDecode` é JPEG 2000, `/CCITTFaxDecode` é bitmap. Nenhum é deflate, e
+ * todos disparavam a rejeição descrita acima.
  */
-export async function extractTextFromPdf(file: File): Promise<string> {
+function pdfStreamFilter(objeto: string): string {
+  const filtro = objeto.match(/\/Filter\s*(\[[^\]]*\]|\/[A-Za-z0-9]+)/);
+  if (!filtro) return 'FlateDecode'; // sem /Filter, o padrão da spec é sem compressão
+  return filtro[1]
+    .replace(/[[\]]/g, '')
+    .split('/')
+    .filter(Boolean)
+    .map((n) => n.trim())
+    .join(',');
+}
+
+/** Só interessa stream comprimido de texto; imagem e bitmap são descartados. */
+function pdfFilterIsText(filter: string): boolean {
+  const f = filter.toLowerCase();
+  if (!f) return false;
+  if (f.includes('dct') || f.includes('jpx') || f.includes('ccitt') || f.includes('runlength')) return false;
+  if (f.includes('asciihex') || f.includes('ascii85')) return false;
+  return f.includes('flate');
+}
+
+/**
+ * Resolve os escapes de uma string literal `(...)` de PDF.
+ *
+ * O padrão antigo só cubria `\(` `\)` e `\\`. Ficavam de fora os escapes
+ * octais (`\350` = ç, `\227` = ç invertida) e os controles de linha
+ * (`\n` `\r` `\t`), que são exatamente os que aparecem em texto com acento
+ * exportado de InDesign e Word. O resultado era "Pot\350ncia" aparecendo
+ * literal na ficha.
+ */
+function decodePdfLiteral(bruto: string): string {
+  return bruto
+    .replace(/\\([0-7]{1,3})/g, (_, oct: string) => String.fromCharCode(parseInt(oct, 8)))
+    .replace(/\\n/g, '\n')
+    .replace(/\\r/g, '\r')
+    .replace(/\\t/g, '\t')
+    .replace(/\\b/g, '\b')
+    .replace(/\\f/g, '\f')
+    .replace(/\\\n/g, '')
+    .replace(/\\([()\\])/g, '$1');
+}
+
+/**
+ * Decodifica string hexadecimal de PDF (`<0044 006F>` → "DO").
+ *
+ * Muitos geradores emitem esse formato em vez de literal `(DO)`. Sem tratar, o
+ * texto desses arquivos some inteiro e o ingestor responde "não informado pelo
+ * fabricante" para uma ficha que estava escrita.
+ */
+function decodePdfHexString(hex: string): string {
+  if (hex.length < 2 || hex.length % 2 !== 0) return '';
+
+  /**
+   * A spec manda 2 bytes em UTF-16BE ("0044 006F" → "DO"). Muitos geradores
+   * emitem 1 byte com o alto zerado ("4400 6F00" → "DO" também).
+   *
+   * Adivinhar pelo formato é frágil — string curta não casa com o padrão de
+   * byte único e acabava descartada. Em vez disso, decodifica como UTF-16BE e
+   * confere o resultado: se aparecer NUL intercalado, era byte único. A
+   * própria saída diz qual dos dois era.
+   */
+  const utf16 = (): string => {
+    if (hex.length % 4 !== 0) return '';
+    let s = '';
+    for (let i = 0; i + 4 <= hex.length; i += 4) {
+      const code = parseInt(hex.slice(i, i + 4), 16);
+      if (Number.isNaN(code)) continue;
+      if (code >= 0xd800 && code <= 0xdbff && i + 8 <= hex.length) {
+        const low = parseInt(hex.slice(i + 4, i + 8), 16);
+        if (low >= 0xdc00 && low <= 0xdfff) {
+          s += String.fromCharCode(((code - 0xd800) << 10) + (low - 0xdc00) + 0x10000);
+          i += 3;
+          continue;
+        }
+      }
+      s += String.fromCharCode(code);
+    }
+    return s;
+  };
+
+  /**
+   * A spec do PDF manda 2 bytes em UTF-16BE: "0044 006F" → "DO". Muitos
+   * geradores emitem 1 byte com o alto zerado: "4400 6F00" → "DO" também.
+   *
+   * O padrão `xx00 xx00 ...` cobrando o string INTEIRO é o discriminador
+   * confiável. Decodificar e olhar o resultado não serve: byte único em
+   * UTF-16BE vira lixo sem NUL nenhum, e UTF-16BE em byte único idem — os
+   * dois caminhos devolvem "texto" e nenhum dos dois denuncia o erro.
+   *
+   * Exige duas repetições para não confundir com um único "xx00".
+   */
+  const byteUnico = /^(?:[0-9A-Fa-f]{2}00){2,}$/.test(hex);
+
+  if (byteUnico) {
+    let s = '';
+    for (let i = 0; i + 4 <= hex.length; i += 4) {
+      s += String.fromCharCode(parseInt(hex.slice(i, i + 2), 16));
+    }
+    return s;
+  }
+
+  const como16 = utf16();
+  if (como16) return como16;
+
+  // Ímpar de dígitos de 4 mas válido como bytes soltos.
+  let out = '';
+  for (let i = 0; i + 2 <= hex.length; i += 2) {
+    const code = parseInt(hex.slice(i, i + 2), 16);
+    if (Number.isNaN(code)) continue;
+    out += String.fromCharCode(code);
+  }
+  return out;
+}
+
+/**
+ * Extrai as linhas de texto de um content stream já descomprimido.
+ *
+ * O truque é o operador de posicionamento. `Tj` e `TJ` continuam na linha
+ * atual; `Td`, `TD`, `T*`, `'` e `"` movem o cursor e portanto abrem linha
+ * nova. O antigo `join(' ')` ignorava isso e colava a página inteira num
+ * parágrafo: "Marca: TechBike Modelo: Urban 500 Potência: 500W" virava o VALOR
+ * do campo marca, e a identidade saía com o texto todo dentro.
+ *
+ * Dentro de uma linha os pedaços juntam sem espaço, porque é kerning: "Po"
+ * + "tência" é uma palavra só.
+ */
+function extractLinesFromContentStream(content: string): string[] {
+  const linhas: string[] = [];
+
+  // Segmentos são as unidades posicionadas: tudo entre um operador de
+  // posicionamento e o seguinte pertence à mesma linha. `BT`/`ET` também
+  // delimitam: um objeto de texto é normalmente uma linha visual, e é como
+  // quem gera PDF linha a linha sem `Td` em campo de formulário.
+  for (const segmento of content.split(/(?=\b(?:Td|TD|T\*|BT|ET|'|")\b)/)) {
+    if (!segmento) continue;
+
+    const partes: string[] = [];
+
+    const lit = /\((.*?)\)\s*Tj/g;
+    let m: RegExpExecArray | null;
+    while ((m = lit.exec(segmento)) !== null) partes.push(decodePdfLiteral(m[1]));
+
+    const arr = /\[(.*?)\]\s*TJ/g;
+    while ((m = arr.exec(segmento)) !== null) {
+      const inner = m[1];
+      const subs = inner.match(/\((.*?)\)/g);
+      if (subs) partes.push(subs.map((s) => decodePdfLiteral(s.slice(1, -1))).join(''));
+      const hexes = inner.match(/<([0-9A-Fa-f\s]+)>/g);
+      if (hexes) {
+        for (const h of hexes) partes.push(decodePdfHexString(h.replace(/[<>]/g, '').replace(/\s+/g, '')));
+      }
+    }
+
+    const hex = /<([0-9A-Fa-f\s]+)>\s*Tj/g;
+    while ((m = hex.exec(segmento)) !== null) {
+      partes.push(decodePdfHexString(m[1].replace(/\s+/g, '')));
+    }
+
+    // Sem separador explícito, "\n" escapado já é fim de linha.
+    const texto = partes.join('').replace(/\r/g, '');
+    for (const parte of texto.split('\n')) {
+      const limpa = parte.replace(/[ \t]{2,}/g, ' ').trim();
+      if (limpa) linhas.push(limpa);
+    }
+  }
+
+  return linhas;
+}
+
+/**
+ * Junta as linhas extraídas na ordem em que o PDF as escreve.
+ *
+ * Junta com `\n`, não com espaço. Os pedaços já saem um por linha de
+ * `extractLinesFromContentStream`; colar com espaço montava uma linha só com a
+ * página inteira, e o alocador lia "Marca: TechBike Modelo: Urban 500
+ * Potência: 500W" como o VALOR do campo marca — a identidade saía com o texto
+ * todo dentro.
+ */
+function joinPdfTextPieces(pieces: string[]): string {
+  return pieces
+    .map((p) => p.replace(/[ \t]{2,}/g, ' ').trim())
+    .filter(Boolean)
+    .join('\n');
+}
+
+/**
+ * Extrai texto legível de um PDF sem depender de biblioteca binária pesada.
+ *
+ * Faz descompressão dos streams /FlateDecode e lê os operadores de texto Tj,
+ * TJ e string hexadecimal `<...>`.
+ *
+ * `truncated` volta `true` quando o arquivo passou do teto de varredura. O
+ * chamador precisa saber disso: sem o sinal, um campo que estava na página 12
+ * do catálogo voltaria como 'Não informado pelo fabricante' — e essa frase
+ * significa "o fabricante não declarou", não "não li até o fim".
+ */
+export interface PdfExtractionResult {
+  text: string;
+  truncated: boolean;
+  scannedBytes: number;
+  totalBytes: number;
+}
+
+export async function extractTextFromPdf(file: File): Promise<PdfExtractionResult> {
+  const empty: PdfExtractionResult = {
+    text: '',
+    truncated: false,
+    scannedBytes: 0,
+    totalBytes: 0,
+  };
+
   try {
     const buffer = await file.arrayBuffer();
     const bytes = new Uint8Array(buffer);
-    let rawStr = '';
+    const totalBytes = bytes.length;
 
-    // Lê como string binária com limite de segurança de 4MB
-    const maxLen = Math.min(bytes.length, 4 * 1024 * 1024);
-    for (let i = 0; i < maxLen; i++) {
-      rawStr += String.fromCharCode(bytes[i]);
+    // O limite antigo era 4 MB e era silêncio: o que passasse disso sumia, e
+    // o ingestor afirmava que o dado não existia no documento. 64 MB cabe
+    // folgado numa ficha, e se mesmo assim estourar, o truncation é
+    // declarado em vez de escondido.
+    const scanLen = Math.min(totalBytes, PDF_SCAN_LIMIT_BYTES);
+    const truncated = scanLen < totalBytes;
+
+    // Monta a string binária em blocos. Concatenar byte a byte num array de
+    // 64 MB custa uma alocação por byte; em pedaços, o motor resolve.
+    const CHUNK = 32768;
+    let rawStr = '';
+    for (let i = 0; i < scanLen; i += CHUNK) {
+      rawStr += String.fromCharCode(...bytes.subarray(i, Math.min(i + CHUNK, scanLen)));
     }
 
     const textPieces: string[] = [];
@@ -617,12 +934,25 @@ export async function extractTextFromPdf(file: File): Promise<string> {
     let searchPos = 0;
     let decompressedCount = 0;
 
-    while (decompressedCount < 40) {
+    while (decompressedCount < PDF_MAX_STREAMS) {
       const streamIdx = rawStr.indexOf(streamMarker, searchPos);
       if (streamIdx === -1) break;
 
       const endStreamIdx = rawStr.indexOf(endstreamMarker, streamIdx + streamMarker.length);
       if (endStreamIdx === -1) break;
+
+      /**
+       * O dicionário tem que ser o do OBJETO ATUAL. Uma janela fixa de N bytes
+       * antes do marcador pega o /Filter do objeto anterior — que é
+       * exatamente o caso da foto: o JPEG vem antes do texto na página, e o
+       * texto era descartado por herdar o /DCTDecode alheio.
+       */
+      const objStart = rawStr.lastIndexOf('obj', streamIdx);
+      const dict = rawStr.slice(objStart === -1 ? Math.max(0, streamIdx - 400) : objStart, streamIdx);
+      if (!pdfFilterIsText(pdfStreamFilter(dict))) {
+        searchPos = endStreamIdx + endstreamMarker.length;
+        continue;
+      }
 
       // Avança além do marcador 'stream' e eventuais quebras de linha (\r\n ou \n)
       let dataStart = streamIdx + streamMarker.length;
@@ -645,7 +975,7 @@ export async function extractTextFromPdf(file: File): Promise<string> {
             const subTj = /\((.*?)\)\s*Tj/g;
             let m: RegExpExecArray | null;
             while ((m = subTj.exec(decompressed)) !== null) {
-              const str = m[1].replace(/\\([()\\])/g, '$1').trim();
+              const str = decodePdfLiteral(m[1]).trim();
               if (str.length > 0) textPieces.push(str);
             }
 
@@ -655,10 +985,20 @@ export async function extractTextFromPdf(file: File): Promise<string> {
               const subMatches = inner.match(/\((.*?)\)/g);
               if (subMatches) {
                 const combined = subMatches
-                  .map((s) => s.slice(1, -1).replace(/\\([()\\])/g, '$1'))
+                  .map((s) => decodePdfLiteral(s.slice(1, -1)))
                   .join('');
                 if (combined.trim().length > 0) textPieces.push(combined.trim());
               }
+            }
+
+            // Hexadecimal vive dentro do stream comprimido na maioria dos
+            // arquivos. Só vasculhar o corpo descomprimido deixava de fora
+            // exatamente quem mais usa esse formato.
+            const subHex = /<([0-9A-Fa-f\s]+)>\s*Tj/g;
+            while ((m = subHex.exec(decompressed)) !== null) {
+              const hex = m[1].replace(/\s+/g, '');
+              const out = decodePdfHexString(hex);
+              if (out.trim().length > 0) textPieces.push(out.trim());
             }
 
             decompressedCount++;
@@ -671,38 +1011,35 @@ export async function extractTextFromPdf(file: File): Promise<string> {
       searchPos = endStreamIdx + endstreamMarker.length;
     }
 
-    // 2. Extração de strings no corpo não comprimido
-    const tjRegex = /\((.*?)\)\s*Tj/g;
-    let match: RegExpExecArray | null;
-    while ((match = tjRegex.exec(rawStr)) !== null) {
-      const decoded = match[1].replace(/\\([()\\])/g, '$1');
-      if (decoded.trim().length > 1) {
-        textPieces.push(decoded.trim());
+    // 2. Extração de strings no corpo não comprimido, na mesma ordem de
+    //    leitura do stream comprimido.
+    for (const linha of extractLinesFromContentStream(rawStr)) {
+      textPieces.push(linha);
+    }
+
+    /**
+     * Mínimo de texto para considerar que a extração deu certo.
+     *
+     * O critério antigo era `textPieces.length >= 6`, ou seja, seis operadores
+     * de texto. Uma página de ficha técnica com "Marca: TechBike", "Potência:
+     * 500W" e mais três campos gera cinco pedaços — e o texto real era
+     * descartado, com o fallback ASCII devolvendo a estrutura interna do PDF
+     * ("4 0 obj /Type /Page /Parent 2 0 R") como se fosse conteúdo. Contagem
+     * de operador não é medida de qualidade; o tamanho do texto é.
+     */
+    const PDF_MIN_USEFUL_CHARS = 8;
+
+    if (textPieces.length > 0) {
+      const joined = joinPdfTextPieces(textPieces);
+      if (joined.length >= PDF_MIN_USEFUL_CHARS) {
+        return { text: joined, truncated, scannedBytes: scanLen, totalBytes };
       }
     }
 
-    const tjArrayRegex = /\[(.*?)\]\s*TJ/g;
-    while ((match = tjArrayRegex.exec(rawStr)) !== null) {
-      const inner = match[1];
-      const subStrings: string[] = [];
-      const subRegex = /\((.*?)\)/g;
-      let subMatch: RegExpExecArray | null;
-      while ((subMatch = subRegex.exec(inner)) !== null) {
-        const decoded = subMatch[1].replace(/\\([()\\])/g, '$1');
-        if (decoded.trim()) subStrings.push(decoded);
-      }
-      if (subStrings.length > 0) {
-        textPieces.push(subStrings.join(''));
-      }
-    }
-
-    if (textPieces.length >= 6) {
-      return textPieces.join(' ').replace(/\s+/g, ' ').trim();
-    }
-
-    // 3. Fallback: Localizar sequências de texto imprimível ASCII (4+ caracteres)
+    // 3. Fallback: Localizar sequências de texto imprimível (4+ caracteres)
     const asciiRegex = /[A-Za-z0-9À-ÿ\s,.:;!?'"()/\-–]{4,}/g;
     const readableBlocks: string[] = [];
+    let match: RegExpExecArray | null;
     while ((match = asciiRegex.exec(rawStr)) !== null) {
       const block = match[0].trim();
       if (
@@ -718,13 +1055,23 @@ export async function extractTextFromPdf(file: File): Promise<string> {
     }
 
     if (readableBlocks.length > 0) {
-      return readableBlocks.slice(0, 1000).join('\n');
+      return {
+        text: readableBlocks.slice(0, 1000).join('\n'),
+        truncated,
+        scannedBytes: scanLen,
+        totalBytes,
+      };
     }
 
-    return `Documento PDF: ${file.name} (${Math.round(file.size / 1024)} KB)`;
+    return {
+      text: `Documento PDF: ${file.name} (${Math.round(file.size / 1024)} KB)`,
+      truncated,
+      scannedBytes: scanLen,
+      totalBytes,
+    };
   } catch (err) {
     console.warn('[fileIngestion] Falha ao analisar PDF no cliente:', err);
-    return `Documento PDF: ${file.name}`;
+    return { text: `Documento PDF: ${file.name}`, truncated: false, scannedBytes: 0, totalBytes: 0 };
   }
 }
 
@@ -806,23 +1153,34 @@ export async function parseUploadedFile(file: File): Promise<IngestedFilePayload
 
   // 2.4 Arquivo PDF (.pdf)
   if (binaryInfo.isPdf || declaredExt === 'pdf') {
-    const pdfText = await extractTextFromPdf(file);
     let base64 = '';
     try {
       base64 = await readFileAsBase64(file);
     } catch (_) {}
 
+    const pdf = await extractTextFromPdf(file);
+    const pdfText = pdf.text;
     const tableSpecs = extractMarkdownTablesAndSpecs(pdfText);
     return finalizePayload({
       fileName,
       fileType: 'pdf',
-      rawText: pdfText,
+      // O aviso de truncamento entra no texto de propósito: ele viaja até o
+      // ingestor, que precisa recusar "Não informado pelo fabricante" para
+      // campo que pode estar na parte do PDF que não lemos.
+      rawText: pdf.truncated
+        ? `${pdfText}\n\n[AVISO DE INGESTÃO] O PDF tem ${(pdf.totalBytes / 1024 / 1024).toFixed(1)} MB ` +
+          `e só ${(pdf.scannedBytes / 1024 / 1024).toFixed(1)} MB foram lidos. ` +
+          'Campos ausentes podem estar na parte não lida.'
+        : pdfText,
       parsedYamlOrJson: Object.keys(tableSpecs).length > 0 ? { tableSpecs } : undefined,
       detectedTitle: extractTitleHint(pdfText, null) || fileName.replace(/\.pdf$/i, ''),
       detectedPricePoints: extractPricePointsHint(pdfText, null),
       fileBase64: base64,
       mimeType: 'application/pdf',
       binaryInfo,
+      extractionWarnings: pdf.truncated
+        ? [`PDF truncado na leitura: ${(pdf.scannedBytes / 1024 / 1024).toFixed(1)} de ${(pdf.totalBytes / 1024 / 1024).toFixed(1)} MB.`]
+        : [],
     }, file);
   }
 
@@ -1007,7 +1365,17 @@ async function parseZipFile(file: File): Promise<IngestedFilePayload> {
     // 2. Arquivos de texto / dados estruturados
     if (['md', 'markdown', 'txt', 'yaml', 'yml', 'json', 'csv'].includes(entryExt)) {
       try {
-        const text = await entry.async('string');
+        /**
+         * `entry.async('string')` decodifica como UTF-8 fixo, que é o mesmo
+         * bug que `readFileAsText` tinha: ficha dentro de ZIP vinda do Excel
+         * brasileiro é Latin-1 e virava mojibake. Lendo os bytes e passando
+         * por `decodeTextBuffer`, o ZIP passa a ter a mesma detecção do upload
+         * direto — BOM, UTF-8 estrito, depois Windows-1252.
+         */
+        const rawEntry = await entry.async('uint8array');
+        const text = decodeTextBuffer(
+          rawEntry.buffer.slice(rawEntry.byteOffset, rawEntry.byteOffset + rawEntry.byteLength) as ArrayBuffer
+        );
         const cleanT = text.replace(/^\uFEFF/, '').trim();
         if (cleanT.length > 0) {
           textSnippets.push({
