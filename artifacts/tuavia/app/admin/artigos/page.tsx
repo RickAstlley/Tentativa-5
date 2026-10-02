@@ -9,10 +9,9 @@ import { onAuthStateChanged } from 'firebase/auth';
 import { collection, getDocs, deleteDoc, doc } from 'firebase/firestore';
 import AdminHeader from '@/components/admin/AdminHeader';
 import FirebaseStatusWidget from '@/components/admin/FirebaseStatusWidget';
-import ArticleAiAssistantCard from '@/components/admin/ArticleAiAssistantCard';
 import { Article } from '@/types/article';
 import { formatArticleDate, fetchArticlesFromFirestore, getAllArticles } from '@/lib/articles';
-import { fetchAdminJson } from '@/lib/ai/clientResponse';
+import { fetchAdminJson } from '@/lib/apiResponse';
 import {
   FileText,
   Plus,
@@ -39,7 +38,6 @@ export default function AdminArticlesListPage() {
   const [articles, setArticles] = useState<Article[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [showAiCard, setShowAiCard] = useState(false);
 
   // Modal de confirmação de exclusão
   const [articleToDelete, setArticleToDelete] = useState<Article | null>(null);
@@ -175,28 +173,6 @@ export default function AdminArticlesListPage() {
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
-            <button
-              type="button"
-              onClick={() => setShowAiCard((prev) => !prev)}
-              className={`px-4 py-3 font-black text-xs uppercase tracking-wider rounded-xl border-2 border-stone-900 shadow-[4px_4px_0px_0px_rgba(28,25,23,1)] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all flex items-center justify-center gap-2 shrink-0 cursor-pointer ${
-                showAiCard
-                  ? 'bg-stone-900 text-amber-400'
-                  : 'bg-amber-400 hover:bg-amber-300 text-stone-950'
-              }`}
-            >
-              <Sparkles className="w-4 h-4 text-amber-500 fill-amber-500" />
-              <span>Gerar Artigo com IA</span>
-              {showAiCard ? <ChevronUp className="w-4 h-4 ml-0.5" /> : <ChevronDown className="w-4 h-4 ml-0.5" />}
-            </button>
-
-            <Link
-              href="/admin/artigos/auditoria"
-              className="px-4 py-3 bg-stone-100 hover:bg-stone-200 text-stone-900 font-black text-xs uppercase tracking-wider rounded-xl border-2 border-stone-900 shadow-[4px_4px_0px_0px_rgba(28,25,23,1)] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all flex items-center justify-center gap-2 shrink-0"
-            >
-              <Sparkles className="w-4 h-4 text-stone-700" />
-              <span>Auditoria IA</span>
-            </Link>
-
             <Link
               href="/admin/artigos/novo"
               className="px-5 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-black text-xs uppercase tracking-wider rounded-xl border-2 border-stone-900 shadow-[4px_4px_0px_0px_rgba(28,25,23,1)] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all flex items-center justify-center gap-2 shrink-0"
@@ -207,35 +183,6 @@ export default function AdminArticlesListPage() {
           </div>
         </div>
 
-        {/* Card do Assistente Redator IA Editorial (GLM 5.3) */}
-        {showAiCard && (
-          <div className="animate-fadeIn">
-            <ArticleAiAssistantCard
-              onArticleGenerated={(data) => {
-                try {
-                  const payload = {
-                    title: data.title,
-                    slug: data.slug,
-                    excerpt: data.excerpt,
-                    category: data.category,
-                    body: data.body,
-                    readingTimeMinutes: data.readingTimeMinutes,
-                    relatedBikeCategories: data.relatedBikeCategories,
-                    seoKeywords: data.seoKeywords,
-                  };
-                  sessionStorage.setItem('tuavia_prefill_article', JSON.stringify(payload));
-                  localStorage.setItem('tuavia_prefill_article', JSON.stringify(payload));
-                } catch (e) {
-                  console.error('Erro ao salvar rascunho de IA para o editor:', e);
-                }
-                showToast(`Artigo "${data.title}" gerado com sucesso! Abrindo editor...`);
-                setTimeout(() => {
-                  router.push('/admin/artigos/novo');
-                }, 1200);
-              }}
-            />
-          </div>
-        )}
 
         {/* Widget de Status de Conexão Firebase */}
         <FirebaseStatusWidget onSyncComplete={fetchArticles} />
@@ -296,23 +243,12 @@ export default function AdminArticlesListPage() {
                 </button>
               ) : (
                 <div className="flex flex-wrap items-center justify-center gap-3">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowAiCard(true);
-                      window.scrollTo({ top: 0, behavior: 'smooth' });
-                    }}
-                    className="inline-flex items-center gap-2 px-4 py-2.5 bg-amber-400 hover:bg-amber-300 text-stone-950 font-black text-xs uppercase rounded-lg border-2 border-stone-900 shadow-[2px_2px_0px_0px_rgba(28,25,23,1)] cursor-pointer"
-                  >
-                    <Sparkles className="w-4 h-4 text-stone-950 fill-stone-950" />
-                    Gerar com Redator IA
-                  </button>
                   <Link
                     href="/admin/artigos/novo"
                     className="inline-flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-black text-xs uppercase rounded-lg border-2 border-stone-900 shadow-[2px_2px_0px_0px_rgba(28,25,23,1)]"
                   >
                     <Plus className="w-4 h-4" />
-                    Cadastrar Manualmente
+                    Cadastrar Artigo
                   </Link>
                 </div>
               )}

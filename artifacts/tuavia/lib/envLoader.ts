@@ -215,16 +215,10 @@ export function ensureServerEnvLoaded(forceReload = false): { loadedFiles: strin
     const criticalKeys = [
       'APP_URL',
       'NEXT_PUBLIC_APP_URL',
-      'LLM_EXECUTOR_BASE_URL',
       'ADMIN_PASSCODE',
       // Legado: aceito como alias de ADMIN_PASSCODE. Remover em definitivo.
       'ADMIN_TOKEN',
       'ADMIN_SESSION_SECRET',
-      'LLM_WORKER_SECRET',
-      'LLM_JOBS_FILE',
-      'NVIDIA_API_KEY',
-      'NVIDIA_BASE_URL',
-      'GEMINI_API_KEY',
       'FIREBASE_ADMIN_SERVICE_ACCOUNT',
       'FIREBASE_SERVICE_ACCOUNT',
       'FIREBASE_ADMIN_CREDENTIALS',

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { EBikeReview, RealRangeCommunityStats } from '@/types/ebike';
-import { fetchAdminJson } from '@/lib/ai/clientResponse';
+import { fetchAdminJson } from '@/lib/apiResponse';
 import {
   MessageSquare,
   Trash2,

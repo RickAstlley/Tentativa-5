@@ -91,29 +91,5 @@ for (const file of bikeFiles) {
   }
 }
 
-// 3. Extrair da curadoria da Home
-const curationPath = path.resolve(ROOT_DIR, 'data/home_ai_curation.json');
-if (fs.existsSync(curationPath)) {
-  try {
-    const curation = JSON.parse(fs.readFileSync(curationPath, 'utf8'));
-    let count = 0;
-    if (curation && curation.bikes) {
-      for (const key of Object.keys(curation.bikes)) {
-        const b = curation.bikes[key];
-        if (b && b.imagemUrl && b.imagemUrl.startsWith('data:image/')) {
-          const slug = (b.slug || b.id || key).replace(/[^a-zA-Z0-9_-]/g, '-');
-          b.imagemUrl = extractAndSave(b.imagemUrl, path.resolve(BIKES_IMG_DIR, slug));
-          count++;
-        }
-      }
-    }
-    if (count > 0) {
-      fs.writeFileSync(curationPath, JSON.stringify(curation, null, 2), 'utf8');
-      console.log(`[extract-base64] ✅ ${count} imagens extraídas de data/home_ai_curation.json`);
-    }
-  } catch (err) {
-    console.warn('[extract-base64] ⚠️ Erro ao processar curadoria:', err.message);
-  }
-}
 
 console.log('[extract-base64] ✨ Extração de imagens concluída.');

@@ -10,7 +10,7 @@ import { collection, getDocs, deleteDoc, doc } from 'firebase/firestore';
 import AdminHeader from '@/components/admin/AdminHeader';
 import { EBikeGrouped } from '@/types/ebike';
 import { fetchEBikesFromFirestore } from '@/lib/ebikes';
-import { fetchAdminJson } from '@/lib/ai/clientResponse';
+import { fetchAdminJson } from '@/lib/apiResponse';
 import {
   Bike,
   Plus,

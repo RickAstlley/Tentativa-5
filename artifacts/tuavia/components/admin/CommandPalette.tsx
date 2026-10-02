@@ -1,6 +1,6 @@
 'use client';
 
-import { adminFetch } from '@/lib/ai/clientResponse';
+import { adminFetch } from '@/lib/apiResponse';
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
@@ -34,30 +34,13 @@ const COMMANDS: CommandItem[] = [
   { id: 'nav-bikes-new', label: 'Nova E-Bike', description: 'Cadastrar nova bicicleta', icon: Plus, category: 'navigation', href: '/admin/bikes/novo', keywords: ['criar', 'nova', 'bike'] },
   { id: 'nav-artigos', label: 'Artigos', description: 'Gerenciar blog e artigos', icon: FileText, category: 'navigation', href: '/admin/artigos', shortcut: '⌘3', keywords: ['post', 'blog', 'noticia', 'guia'] },
   { id: 'nav-artigos-new', label: 'Novo Artigo', description: 'Criar novo artigo', icon: Plus, category: 'navigation', href: '/admin/artigos/novo', keywords: ['criar', 'novo', 'artigo'] },
-  { id: 'nav-artigos-audit', label: 'Auditoria IA', description: 'Auditoria de artigos com IA', icon: Sparkles, category: 'navigation', href: '/admin/artigos/auditoria', keywords: ['auditoria', 'ia', 'artigos'] },
   { id: 'nav-rankings', label: 'Rankings', description: 'Top rankings e comparativos', icon: Trophy, category: 'navigation', href: '/admin/rankings', shortcut: '⌘4', keywords: ['top', 'comparativo', 'ranking'] },
   { id: 'nav-rankings-new', label: 'Novo Ranking', description: 'Criar novo ranking', icon: Plus, category: 'navigation', href: '/admin/rankings/novo', keywords: ['criar', 'novo', 'ranking'] },
-  { id: 'nav-ia', label: 'Copiloto IA', description: 'Assistentes de IA especializados', icon: Sparkles, category: 'navigation', href: '/admin/ia', shortcut: '⌘5', keywords: ['chat', 'gerar', 'ia', 'kimi'] },
-  { id: 'nav-radar-global', label: 'Radar Global', description: 'Varredura internacional 7 polos', icon: Globe2, category: 'navigation', href: '/admin/radar-global', shortcut: '⌘6', keywords: ['global', 'china', 'japao', 'busca'] },
-  { id: 'nav-radar', label: 'Radar', description: 'Radar de mercado', icon: Zap, category: 'navigation', href: '/admin/radar', shortcut: '⌘7', keywords: ['radar', 'mercado'] },
   { id: 'nav-config', label: 'Configurações', description: 'Textos, hero, footer, confiança', icon: Settings, category: 'navigation', href: '/admin/configuracoes', shortcut: '⌘,', keywords: ['settings', 'texto', 'hero', 'footer'] },
-  { id: 'nav-telemetry', label: 'Telemetria', description: 'Monitoramento de execuções IA', icon: Activity, category: 'navigation', href: '/admin/telemetry', shortcut: '⌘T', keywords: ['telemetria', 'monitoramento', 'metricas'] },
   { id: 'act-new-bike', label: 'Nova E-Bike', description: 'Cadastrar nova bicicleta no catálogo', icon: Plus, category: 'action', shortcut: '⌘N', keywords: ['criar', 'adicionar', 'cadastro', 'bike'] },
   { id: 'act-new-article', label: 'Novo Artigo', description: 'Escrever novo artigo para o blog', icon: FileText, category: 'action', keywords: ['escrever', 'publicar', 'post'] },
   { id: 'act-new-ranking', label: 'Novo Ranking', description: 'Criar top ranking comparativo', icon: Trophy, category: 'action', keywords: ['top', 'comparar', 'ranking'] },
-  { id: 'act-scan-radar', label: 'Escanear Radar Agora', description: 'Disparar varredura internacional imediata', icon: Zap, category: 'action', shortcut: '⌘R', keywords: ['scan', 'buscar', 'varredura', 'atualizar'] },
   { id: 'act-sync-firestore', label: 'Sincronizar Firestore', description: 'Backup local → Firestore', icon: Database, category: 'action', keywords: ['sync', 'backup', 'salvar', 'firebase'] },
-  { id: 'act-ai-create', label: 'Criar com IA (Wizard)', description: 'Assistente unificado: Artigo, Bike ou Ranking', icon: Sparkles, category: 'action', shortcut: '⌘K', keywords: ['wizard', 'assistente', 'gerar', 'ia'] },
-  { id: 'ai-chat', label: 'Chat Inteligente', description: 'Conversa livre com Kimi K3 + Nemotron', icon: MessageSquare, category: 'ai', href: '/admin/ia?mode=chat', keywords: ['conversar', 'perguntar', 'duvida'] },
-  { id: 'ai-article', label: 'Redator Editorial', description: 'Artigo SEO completo 2-pings', icon: FileText, category: 'ai', href: '/admin/ia?mode=article_writer', keywords: ['artigo', 'seo', 'blog', 'escrever'] },
-  { id: 'ai-ebike', label: 'Ficha E-Bike', description: 'Análise técnica + CONTRAN + specs', icon: Bike, category: 'ai', href: '/admin/ia?mode=ebike_analysis', keywords: ['ficha', 'tecnica', 'especs', 'contran'] },
-  { id: 'ai-ranking', label: 'Top Ranking', description: 'Ranking Top 3-10 com lojas', icon: Trophy, category: 'ai', href: '/admin/ia?mode=top_ranking', keywords: ['ranking', 'top', 'comparativo'] },
-  { id: 'ai-audit', label: 'Auditor Anti-Alucinação', description: 'Validação jurídica CONTRAN 996', icon: ShieldCheck, category: 'ai', href: '/admin/ia?mode=audit_anti_hallucination', keywords: ['auditoria', 'validar', 'juridico', 'conformidade'] },
-  { id: 'ai-playground', label: 'Playground', description: 'Teste modelos e prompts', icon: Play, category: 'ai', href: '/admin/ia/playground', keywords: ['playground', 'teste', 'modelos'] },
-  { id: 'ai-pipelines', label: 'Pipelines', description: 'Gerenciar pipelines de IA', icon: Layers, category: 'ai', href: '/admin/ia/pipelines', keywords: ['pipelines', 'workflows'] },
-  { id: 'ai-vector-store', label: 'Vector Store', description: 'Busca semântica e RAG', icon: Database, category: 'ai', href: '/admin/ia/vector-store', keywords: ['vector', 'store', 'rag', 'busca'] },
-  { id: 'ai-setup', label: 'Setup IA', description: 'Configurar modelos e chaves', icon: Wrench, category: 'ai', href: '/admin/ia/setup', keywords: ['setup', 'config', 'modelos'] },
-  { id: 'util-export', label: 'Exportar Relatório Radar', description: 'Baixar pautas em Markdown', icon: Download, category: 'action', keywords: ['exportar', 'download', 'markdown', 'relatorio'] },
   { id: 'util-view-site', label: 'Ver Site Público', description: 'Abrir tuavia.com.br em nova aba', icon: ExternalLink, category: 'action', shortcut: '⌘E', keywords: ['site', 'publico', 'visualizar'] },
 ];
 
@@ -81,17 +64,8 @@ export default function CommandPalette() {
       if (cmd.id === 'act-new-ranking') {
         return { ...cmd, action: () => router.push('/admin/rankings/novo') };
       }
-      if (cmd.id === 'act-scan-radar') {
-        return { ...cmd, action: triggerRadarScan };
-      }
       if (cmd.id === 'act-sync-firestore') {
         return { ...cmd, action: triggerSync };
-      }
-      if (cmd.id === 'act-ai-create') {
-        return { ...cmd, action: () => router.push('/admin/criar') };
-      }
-      if (cmd.id === 'util-export') {
-        return { ...cmd, action: exportRadarMarkdown };
       }
       if (cmd.id === 'util-view-site') {
         return { ...cmd, action: () => window.open('/', '_blank') };
@@ -283,24 +257,6 @@ export default function CommandPalette() {
   );
 }
 
-function triggerRadarScan() {
-  adminFetch('/api/admin/llm/radar', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ action: 'scan' }),
-  }).then(() => {
-    if (typeof window !== 'undefined') window.dispatchEvent(new Event('llm-job-start'));
-  });
-}
-
 function triggerSync() {
   adminFetch('/api/admin/migrate', { method: 'POST' });
-}
-
-function exportRadarMarkdown() {
-  adminFetch('/api/admin/llm/radar/global-search?export=markdown')
-    .then(r => r.text())
-    .then(text => {
-      navigator.clipboard.writeText(text);
-    });
 }

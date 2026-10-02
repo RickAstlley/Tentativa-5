@@ -21,11 +21,9 @@ export interface ShortcutEntry {
 export const SEQUENCE_SHORTCUTS: Record<string, string> = {
   d: '/admin',
   c: '/admin/configuracoes',
-  t: '/admin/telemetry',
   a: '/admin/artigos',
   r: '/admin/rankings',
   b: '/admin/bikes',
-  i: '/admin/ia',
   n: '/admin/criar',
 };
 
@@ -35,9 +33,7 @@ export const SIMPLE_SHORTCUTS: ShortcutEntry[] = [
   { keys: 'G então A', label: 'Artigos' },
   { keys: 'G então B', label: 'E-Bikes' },
   { keys: 'G então R', label: 'Rankings' },
-  { keys: 'G então I', label: 'Copilot de IA' },
   { keys: 'G então C', label: 'Configurações' },
-  { keys: 'G então T', label: 'Telemetria' },
   { keys: 'G então N', label: 'Criar novo' },
   { keys: '?', label: 'Mostrar esta ajuda' },
   { keys: 'Esc', label: 'Fechar overlays' },

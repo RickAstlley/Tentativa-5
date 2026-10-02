@@ -16,7 +16,6 @@ import {
   ArrowDown,
   Image as ImageIcon,
   ExternalLink,
-  Bot,
   Search,
   RefreshCw,
   ShieldCheck
@@ -24,8 +23,7 @@ import {
 import SafeImage from '@/components/ui/SafeImage';
 import { uploadMedia } from '@/lib/media/upload';
 import { uploadMediaOrKeep as uploadBase64ToCentralMedia } from '@/lib/media/upload';
-import { fetchAdminJson } from '@/lib/ai/clientResponse';
-import { createAndPollLLMJob } from '@/lib/ai/llmJobClient';
+import { fetchAdminJson } from '@/lib/apiResponse';
 
 export interface GalleryImagesFieldProps {
   label?: string;
@@ -56,111 +54,14 @@ export function GalleryImagesField({
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   // Estados da Busca de Galeria com IA (LLM)
-  const [showAiSearch, setShowAiSearch] = useState(false);
-  const [aiQuery, setAiQuery] = useState(searchHint);
-  const [isAiSearching, setIsAiSearching] = useState(false);
-  const [aiCandidates, setAiCandidates] = useState<any[]>([]);
   const [aiFeedback, setAiFeedback] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (searchHint && !aiQuery) {
-      setAiQuery(searchHint);
-    }
-  }, [searchHint, aiQuery]);
 
   // Garantir que temos um array limpo
   const cleanImages = Array.isArray(images) ? images.filter((img) => typeof img === 'string') : [];
 
-  const handleRunAiGallerySearch = async () => {
-    const q = aiQuery.trim() || searchHint.trim();
-    if (!q) {
-      setUploadError('Informe um termo para buscar imagens com IA.');
-      return;
-    }
 
-    setIsAiSearching(true);
-    setUploadError(null);
-    setAiFeedback(null);
 
-    try {
-      const job = await createAndPollLLMJob({
-        type: 'image_search_validate',
-        input: {
-          action: 'search',
-          query: q,
-          count: 6,
-          contextHint: `Galeria complementar de fotos para: ${q}`,
-        },
-      });
-
-      const results = job.result?.data?.results || job.result?.article_images || [];
-      if (job.status === 'completed' && Array.isArray(results)) {
-        setAiCandidates(results);
-        if (results.length === 0) {
-          setAiFeedback('Nenhuma imagem complementar encontrada para o termo.');
-          setTimeout(() => setAiFeedback(null), 3500);
-        }
-      } else {
-        throw new Error(job.error || 'Falha ao buscar imagens.');
-      }
-    } catch (err: any) {
-      console.error('[GalleryImagesField] Erro na busca IA:', err);
-      setUploadError(err.message || 'Erro ao pesquisar fotos.');
-    } finally {
-      setIsAiSearching(false);
-    }
-  };
-
-  const handleAddAiImageToGallery = async (url: string) => {
-    if (cleanImages.includes(url)) {
-      setAiFeedback('Esta imagem já está na sua galeria.');
-      setTimeout(() => setAiFeedback(null), 3000);
-      return;
-    }
-    if (cleanImages.length >= maxImages) {
-      setUploadError(`Limite máximo de ${maxImages} imagens atingido.`);
-      return;
-    }
-
-    let finalUrl = url;
-    if (finalUrl.startsWith('data:image/')) {
-      setIsUploading(true);
-      setUploadProgressText('Enviando foto da galeria para a nuvem (tuavia.com.br)...');
-      try {
-        finalUrl = await uploadBase64ToCentralMedia(finalUrl, {
-          folder: folder === 'artigos' ? 'articles' : folder,
-          onProgress: (m) => setUploadProgressText(m),
-        });
-      } catch (err: any) {
-        setUploadError(`Falha ao enviar imagem da galeria: ${err.message}`);
-        setIsUploading(false);
-        setUploadProgressText(null);
-        return;
-      } finally {
-        setIsUploading(false);
-        setUploadProgressText(null);
-      }
-    }
-
-    onChange([...cleanImages, finalUrl]);
-    setAiFeedback('Foto adicionada à galeria com sucesso!');
-    setTimeout(() => setAiFeedback(null), 3000);
-  };
-
-  const handleAddAllAiImages = () => {
-    const toAdd: string[] = [];
-    for (const cand of aiCandidates) {
-      if (!cleanImages.includes(cand.imageUrl) && !toAdd.includes(cand.imageUrl)) {
-        if (cleanImages.length + toAdd.length >= maxImages) break;
-        toAdd.push(cand.imageUrl);
-      }
-    }
-    if (toAdd.length > 0) {
-      onChange([...cleanImages, ...toAdd]);
-      setAiFeedback(`${toAdd.length} fotos adicionadas à galeria!`);
-      setTimeout(() => setAiFeedback(null), 3500);
-    }
-  };
 
   const handleAddUrl = async () => {
     const trimmed = newUrl.trim();
@@ -342,144 +243,8 @@ export function GalleryImagesField({
               <Upload className="w-4 h-4 text-emerald-600" />
               <span>{isUploading ? 'Enviando...' : 'Upload'}</span>
             </button>
-
-            <button
-              type="button"
-              onClick={() => setShowAiSearch(!showAiSearch)}
-              className={`py-2.5 px-3 rounded-xl border-2 border-stone-900 text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer shadow-[2px_2px_0px_0px_rgba(28,25,23,1)] transition-all ${
-                showAiSearch
-                  ? 'bg-amber-400 text-stone-900'
-                  : 'bg-stone-900 hover:bg-stone-800 text-amber-300'
-              }`}
-            >
-              <Bot className="w-4 h-4 text-amber-400" />
-              <span>Buscar com IA</span>
-            </button>
           </div>
-        </div>
-
-        {/* Painel Expansível de Busca com IA para Galeria */}
-        {showAiSearch && (
-          <div className="p-4 bg-amber-50/70 border-2 border-amber-400 rounded-2xl space-y-3">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-              <div className="flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-amber-600" />
-                <span className="text-xs font-black text-stone-900">
-                  Pesquisa e Curadoria Automática de Fotos Complementares
-                </span>
-              </div>
-              <span className="text-[11px] font-mono text-stone-500">
-                NVIDIA NIM • Validação de Fotos Reais
-              </span>
-            </div>
-
-            <div className="flex gap-2">
-              <div className="relative flex-1">
-                <Search className="w-4 h-4 text-stone-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                <input
-                  type="text"
-                  placeholder="Nome do produto ou tema da foto..."
-                  value={aiQuery}
-                  onChange={(e) => setAiQuery(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      handleRunAiGallerySearch();
-                    }
-                  }}
-                  className="w-full pl-9 pr-3 py-2 bg-white border-2 border-stone-900 rounded-xl text-xs font-bold text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-400"
-                />
-              </div>
-              <button
-                type="button"
-                onClick={handleRunAiGallerySearch}
-                disabled={isAiSearching}
-                className="px-4 py-2 bg-stone-900 hover:bg-stone-800 disabled:opacity-50 text-amber-300 font-black text-xs rounded-xl border-2 border-stone-900 shadow-[2px_2px_0px_0px_rgba(28,25,23,1)] transition-all cursor-pointer flex items-center gap-1.5 shrink-0"
-              >
-                {isAiSearching ? (
-                  <>
-                    <RefreshCw className="w-4 h-4 animate-spin text-amber-400" />
-                    <span>Buscando Fotos...</span>
-                  </>
-                ) : (
-                  <>
-                    <Search className="w-4 h-4 text-amber-400" />
-                    <span>Pesquisar</span>
-                  </>
-                )}
-              </button>
-            </div>
-
-            {aiFeedback && (
-              <div className="p-2 bg-emerald-100 border border-emerald-500 rounded-lg text-xs font-bold text-emerald-900 flex items-center gap-1.5">
-                <Check className="w-4 h-4 text-emerald-700" />
-                <span>{aiFeedback}</span>
-              </div>
-            )}
-
-            {/* Resultados da Pesquisa IA */}
-            {aiCandidates.length > 0 && (
-              <div className="space-y-2 pt-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-stone-800 flex items-center gap-1">
-                    <ShieldCheck className="w-4 h-4 text-emerald-600" />
-                    Fotos Encontradas ({aiCandidates.length}):
-                  </span>
-                  <button
-                    type="button"
-                    onClick={handleAddAllAiImages}
-                    className="px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-lg border border-stone-900 transition-all cursor-pointer shadow-xs"
-                  >
-                    + Adicionar Todas ({aiCandidates.length}) à Galeria
-                  </button>
-                </div>
-
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
-                  {aiCandidates.map((cand) => {
-                    const isInGallery = cleanImages.includes(cand.imageUrl);
-                    return (
-                      <div
-                        key={cand.id}
-                        className={`p-2 bg-white border-2 rounded-xl flex flex-col justify-between gap-1.5 transition-all ${
-                          isInGallery ? 'border-emerald-600 bg-emerald-50/50' : 'border-stone-900 hover:border-amber-500'
-                        }`}
-                      >
-                        <div className="relative w-full aspect-video rounded-lg overflow-hidden bg-stone-100 border border-stone-200">
-                          <img
-                            src={cand.thumbnailUrl || cand.imageUrl}
-                            alt={cand.altText}
-                            className="w-full h-full object-cover"
-                            loading="lazy"
-                          />
-                          {isInGallery && (
-                            <div className="absolute top-1 left-1 bg-emerald-600 text-white text-[9px] font-black px-1.5 py-0.2 rounded shadow">
-                              ✓ Galeria
-                            </div>
-                          )}
-                        </div>
-                        <p className="text-[10px] font-bold text-stone-900 truncate" title={cand.title}>
-                          {cand.title}
-                        </p>
-                        <button
-                          type="button"
-                          onClick={() => handleAddAiImageToGallery(cand.imageUrl)}
-                          className={`w-full py-1 rounded-lg text-[10px] font-black border transition-all cursor-pointer flex items-center justify-center gap-1 ${
-                            isInGallery
-                              ? 'bg-emerald-100 text-emerald-800 border-emerald-400'
-                              : 'bg-emerald-600 hover:bg-emerald-700 text-white border-stone-900 shadow-xs'
-                          }`}
-                        >
-                          {isInGallery ? <Check className="w-3 h-3 text-emerald-700" /> : <Plus className="w-3 h-3 text-white" />}
-                          <span>{isInGallery ? 'Na Galeria' : '+ Galeria'}</span>
-                        </button>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
+      </div>
       </div>
 
       {/* Sugestões Rápidas / Presets (se fornecidos) */}

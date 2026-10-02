@@ -49,9 +49,7 @@ import {
   auditIngestionQuality,
   IngestionQualityReport,
 } from '@/lib/admin/fileIngestion';
-import { fetchAdminJson, ApiResponseResult } from '@/lib/ai/clientResponse';
-import { createAndPollLLMJob } from '@/lib/ai/llmJobClient';
-import { UNCONFIRMED_LABEL } from '@/lib/ingestion/pipeline';
+import { fetchAdminJson, ApiResponseResult } from '@/lib/apiResponse';
 import { CANONICAL_SPEC_SECTIONS } from '@/lib/specAllocations';
 import {
   ExtractionCacheData,
@@ -143,7 +141,7 @@ export default function FileIngestionDropzone({
   const [isReadingFile, setIsReadingFile] = useState(false);
 
   // Estados de Execução dos Processos de Alocação
-  const [runningStep, setRunningStep] = useState<number | 'all' | 'deterministic' | 'article_direct' | 'article_llm' | 'ranking_direct' | 'ranking_llm' | null>(null);
+  const [runningStep, setRunningStep] = useState<number | 'all' | 'deterministic' | 'article_direct' | 'ranking_direct' | null>(null);
 
   // Política de IA. A extração e a alocação são sempre determinísticas e
   // não gastam token; a IA só entra se sobrar buraco e o editor permitir.
@@ -351,16 +349,20 @@ export default function FileIngestionDropzone({
 
       setIsReadingFile(false);
 
-      // Pipeline determinístico primeiro. A IA só é chamada depois, e só se sobrar buraco.
-      if (mode === 'ebike') {
-        setSuccessMessage(`Arquivo "${payload.fileName}" carregado com sucesso. Extraindo e alocando nas 10 seções canônicas...`);
-        await handleRunUnifiedExtraction(targetCacheToProcess);
-      } else if (mode === 'article') {
-        setSuccessMessage(`Arquivo "${payload.fileName}" carregado com sucesso. A IA está analisando e estruturando o artigo...`);
-        await handleRunArticleLlm();
+      // A alocação é toda local: o texto bruto já está em cache e o formulário é
+      // preenchido sem passar por modelo. Antes, este bloco disparava um job de
+      // LLM para fechar buraco; agora só article e ranking pré-preenchem direto.
+      if (mode === 'article') {
+        setSuccessMessage(`Arquivo "${payload.fileName}" carregado. Alocando direto no formulário...`);
+        handleRunArticleDirect();
       } else if (mode === 'ranking') {
-        setSuccessMessage(`Arquivo "${payload.fileName}" carregado com sucesso. A IA está analisando e estruturando o ranking comparativo...`);
-        await handleRunRankingLlm();
+        setSuccessMessage(`Arquivo "${payload.fileName}" carregado. Alocando direto no formulário...`);
+        handleRunRankingDirect();
+      } else {
+        setSuccessMessage(
+          `Arquivo "${payload.fileName}" carregado e estruturado nas seções canônicas. ` +
+            'Revise os campos e preencha o restante à mão.'
+        );
       }
     } catch (err: any) {
       console.error('[FileIngestionDropzone] Falha na leitura do arquivo:', err);
@@ -419,158 +421,6 @@ export default function FileIngestionDropzone({
    * O progresso dos 10 blocos canônicos vem do resultado real do pipeline,
    * não de animação.
    */
-  const handleRunUnifiedExtraction = async (cacheData?: ExtractionCacheData) => {
-    const targetCache = cacheData || currentCache;
-    const rawText = targetCache?.rawText || ingestedPayload?.rawText || '';
-    const fileName = targetCache?.fileName || ingestedPayload?.fileName || 'documento.txt';
-
-    if (!rawText || rawText.trim().length === 0) {
-      setErrorMessage('Nenhum arquivo anexado. Arraste ou selecione um arquivo antes de extrair as informações.');
-      return null;
-    }
-
-    setRunningStep('deterministic');
-    startTimer();
-    setErrorMessage(null);
-    setCurrentActiveBlock(null);
-
-    try {
-      /**
-       * Fila persistente, não chamada bloqueante.
-       *
-       * A rota `/api/admin/llm/ingest` tem `maxDuration = 60` e a Hostinger
-       * derruba antes disso. Como o pipeline com IA leva mais de um minuto, a
-       * requisição morria no proxy e a extração determinística — que já tinha
-       * dado certo — ia junto. O job roda fora do prazo do proxy e o polling
-       * traz o progresso real.
-       */
-      const job = await createAndPollLLMJob({
-        type: 'ebike_ingest_step',
-        input: {
-          rawText,
-          fileName,
-          parsedData: ingestedPayload?.parsedYamlOrJson ?? targetCache?.structuredYaml,
-          llmPolicy: useLlmToFillGaps ? 'gaps-only' : 'never',
-        },
-        onProgress: (queued) => {
-          setRunningStep(queued.progress >= 90 ? 'all' : 'deterministic');
-          setActiveSubStep(Math.min(100, Math.max(1, Math.round(queued.progress / 10))));
-          setSuccessMessage(
-            `⏳ [${queued.progress}%] ${queued.stage || 'Extraindo e alocando...'}`
-          );
-        },
-      });
-
-      const payload =
-        (job.result?.data as any) ??
-        (typeof job.result?.data === 'string' ? safeJsonParse(job.result.data) : null);
-
-      if (!payload?.specSections?.length) {
-        throw new Error(
-          job.error ||
-            'O pipeline não retornou seções canônicas. A tarefa segue na fila e pode ser retomada em /admin/ia.'
-        );
-      }
-
-      const editorial = payload.editorial ?? {};
-
-      /**
-       * As 10 seções canônicas + a entrada editorial.
-       *
-       * `INITIAL_MODULAR_BLOCKS` tem 11 itens e o progresso divide por 11, mas
-       * este `map` reconstruía a lista só com as 10 seções: o card editorial
-       * sumia e o contador nunca passava de 10/11 (91%). Aqui as duas partes
-       * são montadas juntas, num único `setState`.
-       */
-      const sectionBlocks: ModularBlockStatus[] = CANONICAL_SPEC_SECTIONS.map((section, index) => {
-        const found = payload.specSections[index];
-        const items = found?.items ?? [];
-        const filled = items.filter(
-          (item: any) => item.value && item.value !== UNCONFIRMED_LABEL
-        );
-        return {
-          index: index + 1,
-          title: section.title,
-          shortName: section.title.replace(/^\d+\.\s*/, ''),
-          description: `${items.length} campo(s) canônico(s)`,
-          status: filled.length > 0 ? ('completed' as const) : ('idle' as const),
-          summary: `${filled.length}/${items.length} campo(s)`,
-          itemCount: items.length,
-          highlight: filled[0]
-            ? `${filled[0].label}: ${filled[0].value}`
-            : 'Sem dado verificável',
-          items,
-        };
-      });
-
-      const editorialHasContent = Boolean(
-        editorial.resumoExecutivo || editorial.idealFor ||
-        (Array.isArray(editorial.pros) && editorial.pros.length > 0)
-      );
-
-      setModularBlocks([
-        ...sectionBlocks,
-        {
-          index: 'editorial',
-          title: 'Veredito Editorial & Vantagens',
-          shortName: 'Veredito Editorial',
-          description: 'Resumo executivo, perfil de uso, prós e contras',
-          status: editorialHasContent ? ('completed' as const) : ('idle' as const),
-          summary: editorialHasContent
-            ? `${(Array.isArray(editorial.pros) ? editorial.pros.length : 0)} pró(s) / ${(Array.isArray(editorial.cons) ? editorial.cons.length : 0)} contra(s)`
-            : 'Sem veredito no documento',
-          highlight: (editorial.badge as string) || (editorialHasContent ? 'Veredito gerado' : 'Sem base verificável'),
-        },
-      ]);
-
-      setCurrentActiveBlock('editorial');
-
-      const mergedCache: ExtractionCacheData = {
-        ...(targetCache as ExtractionCacheData),
-        updatedAt: new Date().toISOString(),
-        specSections: payload.specSections,
-        editorial: { ...(targetCache?.editorial ?? {}), ...editorial },
-        priceHistoryData: payload.priceHistoryData ?? targetCache?.priceHistoryData,
-        completedSteps: Array.from(new Set([...(targetCache?.completedSteps || []), 1, 2, 3])),
-      };
-
-      /**
-       * Persiste ANTES de recarregar a lista.
-       *
-       * Na ordem antiga, `setCurrentCache(mergedCache)` era seguido de
-       * `refreshCachesList()`, que relê o `localStorage` e chama
-       * `setCurrentCache` com o registro antigo. O React agrupa os dois
-       * `setState` e o último ganhava — o cache voltava sem `specSections`, o
-       * painel mostrava 0/10 e restaurar do Cache reemitia lista vazia, então
-       * o formulário nunca recebia as especificações.
-       */
-      saveExtractionCache(mergedCache);
-      setCurrentCache(mergedCache);
-      emitConsolidatedData(mergedCache);
-      refreshCachesList();
-
-      const stats = payload.stats ?? {};
-      const gapNote = stats.gapCount
-        ? ` ${stats.gapCount} campo(s) ficaram sem fonte.`
-        : ' Ficha completa.';
-      const llmNote = stats.llmUsed
-        ? ` IA chamada 1x para fechar ${stats.llmFieldsFilled} buraco(s).`
-        : ' Nenhum token de IA foi gasto.';
-      const llmErrorNote = stats.llmError ? ` (${stats.llmError})` : '';
-      setSuccessMessage(
-        `✓ ${stats.filledItems ?? 0}/${stats.totalCanonicalItems ?? 0} campos preenchidos.${gapNote}${llmNote}${llmErrorNote}`
-      );
-      return payload;
-    } catch (err: any) {
-      console.error('[Dropzone] Falha no pipeline unificado:', err);
-      setErrorMessage(err.message || 'Erro durante a extração.');
-      return null;
-    } finally {
-      stopTimer();
-      setRunningStep(null);
-      setActiveSubStep(null);
-    }
-  };
 
   // Handlers para os modos Artigo e Ranking
   const handleRunArticleDirect = () => {
@@ -589,36 +439,6 @@ export default function FileIngestionDropzone({
     setSuccessMessage('✓ Artigo alocado diretamente a partir do arquivo.');
   };
 
-  const handleRunArticleLlm = async () => {
-    const rawText = currentCache?.rawText || ingestedPayload?.rawText || '';
-    if (!rawText) return;
-    setRunningStep('article_llm');
-    startTimer();
-    try {
-      const response = await fetchAdminJson<any>('/api/admin/llm/ingest', {
-        method: 'POST',
-        body: JSON.stringify({
-          mode: 'article',
-          rawText,
-          fileName: currentCache?.fileName || ingestedPayload?.fileName,
-          fileBase64: ingestedPayload?.fileBase64,
-          mimeType: ingestedPayload?.mimeType,
-        }),
-      });
-      const data = extractApiData(response);
-      if (data) {
-        onDataExtracted(data);
-        setSuccessMessage('✓ Artigo estruturado e enriquecido com IA com sucesso!');
-      } else {
-        setErrorMessage(response.error || 'Falha ao processar artigo.');
-      }
-    } catch (err: any) {
-      setErrorMessage(err.message || 'Erro ao processar artigo.');
-    } finally {
-      stopTimer();
-      setRunningStep(null);
-    }
-  };
 
   const handleRunRankingDirect = () => {
     const rawText = currentCache?.rawText || ingestedPayload?.rawText || '';
@@ -635,36 +455,6 @@ export default function FileIngestionDropzone({
     setSuccessMessage('✓ Ranking alocado diretamente a partir do arquivo.');
   };
 
-  const handleRunRankingLlm = async () => {
-    const rawText = currentCache?.rawText || ingestedPayload?.rawText || '';
-    if (!rawText) return;
-    setRunningStep('ranking_llm');
-    startTimer();
-    try {
-      const response = await fetchAdminJson<any>('/api/admin/llm/ingest', {
-        method: 'POST',
-        body: JSON.stringify({
-          mode: 'ranking',
-          rawText,
-          fileName: currentCache?.fileName || ingestedPayload?.fileName,
-          fileBase64: ingestedPayload?.fileBase64,
-          mimeType: ingestedPayload?.mimeType,
-        }),
-      });
-      const data = extractApiData(response);
-      if (data) {
-        onDataExtracted(data);
-        setSuccessMessage('✓ Ranking comparativo gerado e alocado com sucesso!');
-      } else {
-        setErrorMessage(response.error || 'Falha ao processar ranking.');
-      }
-    } catch (err: any) {
-      setErrorMessage(err.message || 'Erro ao processar ranking.');
-    } finally {
-      stopTimer();
-      setRunningStep(null);
-    }
-  };
 
   // Funções de limpeza
   const handleClearAllStorage = () => {
@@ -1263,24 +1053,6 @@ export default function FileIngestionDropzone({
                           )}
                         </div>
 
-                        <button
-                          type="button"
-                          disabled={runningStep !== null}
-                          onClick={() => handleRunUnifiedExtraction()}
-                          className="w-full sm:w-auto py-2.5 px-6 rounded-xl bg-gradient-to-r from-emerald-500 to-lime-400 hover:from-emerald-400 hover:to-lime-300 disabled:bg-neutral-800 text-neutral-950 disabled:text-neutral-500 font-black text-xs sm:text-sm flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20 transition-all cursor-pointer"
-                        >
-                          {runningStep === 'deterministic' ? (
-                            <>
-                              <RefreshCw className="w-4 h-4 animate-spin text-neutral-950" />
-                              <span>Alocando Determinístico...</span>
-                            </>
-                          ) : (
-                            <>
-                              <Zap className="w-4 h-4 fill-current" />
-                              <span>⚡ Alocar Determinístico nas Especificações</span>
-                            </>
-                          )}
-                        </button>
                       </div>
                     </div>
                   )}
@@ -1360,29 +1132,6 @@ export default function FileIngestionDropzone({
                       </ul>
                     </div>
 
-                    <button
-                      type="button"
-                      disabled={runningStep !== null}
-                      onClick={() => handleRunUnifiedExtraction()}
-                      className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-indigo-600 via-indigo-500 to-purple-600 hover:from-indigo-500 hover:to-purple-500 disabled:bg-neutral-800 text-white disabled:text-neutral-500 font-black text-xs sm:text-sm flex items-center justify-center gap-2 shadow-lg shadow-indigo-500/25 transition-all cursor-pointer"
-                    >
-                      {runningStep === 'deterministic' ? (
-                        <>
-                          <RefreshCw className="w-4 h-4 animate-spin text-white" />
-                          <span>Extraindo Informações e Tags ({elapsedSeconds}s)...</span>
-                        </>
-                      ) : currentCache?.taggedSpecs && currentCache.taggedSpecs.length > 0 ? (
-                        <>
-                          <RotateCcw className="w-4 h-4" />
-                          <span>Re-extrair Informações com IA</span>
-                        </>
-                      ) : (
-                        <>
-                          <Sparkles className="w-4 h-4 text-lime-300" />
-                          <span>1. Extrair Informações com IA (Rotular Tags)</span>
-                        </>
-                      )}
-                    </button>
                   </div>
 
                   {/* CARD 2: ALOCAÇÃO SEM LLM (DETERMINÍSTICA DIRETA) */}
@@ -1439,24 +1188,6 @@ export default function FileIngestionDropzone({
                       </ul>
                     </div>
 
-                    <button
-                      type="button"
-                      disabled={runningStep !== null}
-                      onClick={() => handleRunUnifiedExtraction()}
-                      className="w-full py-3 px-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 disabled:bg-neutral-800 text-neutral-950 disabled:text-neutral-500 font-black text-xs sm:text-sm flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20 transition-all cursor-pointer"
-                    >
-                      {runningStep === 'deterministic' ? (
-                        <>
-                          <RefreshCw className="w-4 h-4 animate-spin text-neutral-950" />
-                          <span>Alocando Dados Diretamente...</span>
-                        </>
-                      ) : (
-                        <>
-                          <Zap className="w-4 h-4 fill-current" />
-                          <span>Iniciar Alocação Direta (Sem IA)</span>
-                        </>
-                      )}
-                    </button>
                   </div>
                 </div>
               )}
@@ -1514,15 +1245,6 @@ export default function FileIngestionDropzone({
                         Gera título chamativo, slug, resumo otimizado e tags com base no documento.
                       </p>
                     </div>
-                    <button
-                      type="button"
-                      disabled={runningStep !== null}
-                      onClick={handleRunArticleLlm}
-                      className="py-2.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs cursor-pointer flex items-center justify-center gap-2"
-                    >
-                      {runningStep === 'article_llm' ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
-                      Iniciar Alocação com IA
-                    </button>
                   </div>
                 </div>
               )}
@@ -1557,15 +1279,6 @@ export default function FileIngestionDropzone({
                         Estrutura posições, prós, contras e vereditos comparativos via IA.
                       </p>
                     </div>
-                    <button
-                      type="button"
-                      disabled={runningStep !== null}
-                      onClick={handleRunRankingLlm}
-                      className="py-2.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs cursor-pointer flex items-center justify-center gap-2"
-                    >
-                      {runningStep === 'ranking_llm' ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
-                      Iniciar Alocação com IA
-                    </button>
                   </div>
                 </div>
               )}

@@ -10,17 +10,14 @@ import { generateRealisticPriceHistory, sanitizePriceHistory, getLastNMonths } f
 import PriceHistoryChart from '@/components/detail/PriceHistoryChart';
 import { ImageUploadField } from '@/components/admin/ImageUploadField';
 import { GalleryImagesField } from '@/components/admin/GalleryImagesField';
-import { ArticleImageResearchPanel } from '@/components/admin/ArticleImageResearchPanel';
 import BikeReviewsManager from '@/components/admin/BikeReviewsManager';
 import FileIngestionDropzone from '@/components/admin/FileIngestionDropzone';
-import BikeAiAssistantCard from '@/components/admin/BikeAiAssistantCard';
 import { ExtractedImageFile } from '@/lib/admin/fileIngestion';
 import { compressDataUrlForFirestore } from '@/lib/storage';
 import { uploadMediaOrKeep as uploadBase64ToCentralMedia } from '@/lib/media/upload';
-import { fetchAdminJson } from '@/lib/ai/clientResponse';
+import { fetchAdminJson } from '@/lib/apiResponse';
 import { sanitizeInputString } from '@/lib/security';
 import { allocateAndNormalizeSpecSections } from '@/lib/specAllocations';
-import { PipelineFactory } from '@/lib/ai/agentPipeline';
 import { useAutoSave } from '@/hooks/useAutoSave';
 import {
   Bike,
@@ -341,41 +338,8 @@ export default function BikeForm({ initialData, isEditing = false }: BikeFormPro
   };
 
   // Buscador manual de preços reais
-  const [isManualSearching, setIsManualSearching] = useState(false);
-  const [manualSearchStage, setManualSearchStage] = useState<string | null>(null);
-  const [manualSearchSuccess, setManualSearchSuccess] = useState<string | null>(null);
   const isAiLoading = isSaving;
 
-  const handleManualPriceSearch = async () => {
-    if (!marca && !modelo) {
-      setErrorMessage('Informe ao menos a Marca ou o Modelo da E-Bike para buscar preços na web.');
-      return;
-    }
-    setIsManualSearching(true);
-    setManualSearchStage('Buscando ofertas e cotações reais na internet...');
-    setManualSearchSuccess(null);
-    try {
-      const searchRes = await fetchAdminJson('/api/admin/llm/web-search', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query: `${marca} ${modelo} comprar preço oferta`.trim() }),
-      });
-
-      if (searchRes && Array.isArray((searchRes as any).results) && (searchRes as any).results.length > 0) {
-        handleRecalculatePriceHistory();
-        setManualSearchSuccess('Preços e cotações reais detectados com sucesso na internet.');
-      } else {
-        handleRecalculatePriceHistory();
-        setManualSearchSuccess('Preços recalculados com base nas ofertas cadastradas.');
-      }
-    } catch {
-      handleRecalculatePriceHistory();
-      setManualSearchSuccess('Preços atualizados localmente.');
-    } finally {
-      setIsManualSearching(false);
-      setManualSearchStage(null);
-    }
-  };
 
   const handleAddSecondaryKeyword = (kw: string) => {
     const clean = kw.trim();
@@ -1032,105 +996,7 @@ export default function BikeForm({ initialData, isEditing = false }: BikeFormPro
 
   // Quick Spec - gera ficha técnica completa via pipeline IA
   const [showAiIngestionTools, setShowAiIngestionTools] = useState<boolean>(!isEditing && !modelo);
-  const [isQuickSpecRunning, setIsQuickSpecRunning] = useState(false);
-  const [quickSpecProgress, setQuickSpecProgress] = useState(0);
-  const [quickSpecStage, setQuickSpecStage] = useState('');
 
-  const handleQuickSpec = async () => {
-    if (!marca || !modelo) {
-      setErrorMessage('Preencha pelo menos Marca e Modelo para gerar a ficha técnica.');
-      return;
-    }
-    
-    setIsQuickSpecRunning(true);
-    setQuickSpecProgress(0);
-    setQuickSpecStage('Iniciando pipeline de IA...');
-    setErrorMessage(null);
-
-    try {
-      const prompt = `${marca} ${modelo} ${usoPrincipal} ${potenciaW}W ${autonomiaKm}km ${pesoKg}kg ${tempoCargaHoras}h`;
-      
-      const result = await PipelineFactory.ebike({
-        userPrompt: prompt,
-        targetType: 'ebike',
-      }).execute();
-
-      // Aplica resultados ao formulário.
-      // Tudo aqui é validado antes de entrar no estado: a saída do modelo é
-      // JSON não-confiável, e escrever `undefined` num `<input>` controlado
-      // transformava o campo em um input não controlado — o React后来ava de
-      //Framework-controlled para uncontrolled e o campo travava.
-      if (result.classification?.category) {
-        setUsoPrincipal(result.classification.category as EBikeCategory);
-      }
-
-      const generatedSections = Array.isArray(result.technicalSpecs?.specSections)
-        ? (result.technicalSpecs!.specSections as EBikeSpecSection[])
-        : Array.isArray(result.technicalSpecs)
-          ? (result.technicalSpecs as unknown as EBikeSpecSection[])
-          : null;
-      if (generatedSections?.length) {
-        setSpecSections(generatedSections);
-      }
-
-      const verdict = result.verdictPackage;
-      if (verdict?.resumoExecutivo) setResumoExecutivo(verdict.resumoExecutivo);
-      if (verdict?.idealFor) setIdealFor(verdict.idealFor);
-      if (Array.isArray(verdict?.pros) && verdict.pros.length) setPros(verdict.pros);
-      if (Array.isArray(verdict?.cons) && verdict.cons.length) setCons(verdict.cons);
-      if (verdict?.badge) setBadge(verdict.badge);
-
-      const storeSuggestions = result.marketAnalysis?.storeSuggestions;
-      if (Array.isArray(storeSuggestions) && storeSuggestions.length) {
-        setOfertas(
-          storeSuggestions
-            .filter((s) => Boolean(s?.store || s?.affiliateUrl))
-            .map((s, i) => ({
-              id: Date.now() + i,
-              loja: s.store || 'Loja Parceira',
-              preco: Number(s.estimatedPrice) || 0,
-              linkProduto: s.affiliateUrl || '',
-              disponibilidade: 'Em estoque',
-              dataAtualizacao: new Date().toISOString().split('T')[0],
-              observacoes: '',
-            }))
-        );
-      }
-
-      if (result.finalOutput) {
-        handleUpdateSeoReport({
-          focusKeyword: result.finalOutput.focusKeyword || '',
-          serpTitlePreview: result.finalOutput.serpTitle || '',
-          serpDescriptionPreview: result.finalOutput.serpDescription || '',
-          secondaryKeywords: Array.isArray(result.finalOutput.secondaryKeywords)
-            ? result.finalOutput.secondaryKeywords
-            : [],
-          faqSchema: Array.isArray(result.finalOutput.faqSchema)
-            ? result.finalOutput.faqSchema
-                // O pipeline pede `{q, a}` no prompt; `EBikeFAQItem` exige
-                // `{question, answer}`. Sem converter, o FAQ saía vazio.
-                .map((item) => {
-                  const raw = item as { question?: string; answer?: string; q?: string; a?: string };
-                  return {
-                    question: raw.question ?? raw.q ?? '',
-                    answer: raw.answer ?? raw.a ?? '',
-                  };
-                })
-                .filter((item) => Boolean(item.question && item.answer))
-            : [],
-          llmGeoSummary: result.finalOutput.llmGeoSummary || '',
-        });
-      }
-
-      setSuccessMessage('Ficha técnica completa gerada por IA! Revise os campos e publique.');
-    } catch (err: any) {
-      setErrorMessage(err.message || 'Erro ao gerar ficha técnica via IA');
-    } finally {
-      setIsQuickSpecRunning(false);
-      setQuickSpecProgress(0);
-      setQuickSpecStage('');
-    }
-  };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-8">
@@ -1148,7 +1014,7 @@ export default function BikeForm({ initialData, isEditing = false }: BikeFormPro
             <div>
               <span className="block">Assistente IA & Ingestão de Ficha Técnica</span>
               <span className="block text-[11px] font-normal text-stone-500">
-                {showAiIngestionTools ? 'Clique para recolher o assistente' : 'Clique para expandir importação por arquivo (PDF/DOCX/OCR) ou chat IA'}
+                {showAiIngestionTools ? 'Clique para recolher as ferramentas' : 'Clique para expandir a importação por arquivo (PDF/DOCX/OCR)'}
               </span>
             </div>
           </button>
@@ -1156,7 +1022,7 @@ export default function BikeForm({ initialData, isEditing = false }: BikeFormPro
             type="button"
             onClick={() => setShowAiIngestionTools(!showAiIngestionTools)}
             className="p-2 text-stone-500 hover:text-stone-900 bg-stone-100 rounded-lg transition-colors cursor-pointer"
-            aria-label="Alternar ferramentas de IA"
+            aria-label="Alternar ferramentas de ingestão"
           >
             {showAiIngestionTools ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
           </button>
@@ -1164,13 +1030,7 @@ export default function BikeForm({ initialData, isEditing = false }: BikeFormPro
 
         {showAiIngestionTools && (
           <div className="space-y-6 pt-3 border-t-2 border-stone-100 animate-fadeIn">
-            {/* LOCAL DE INPUT PARA CRIAR FICHA DE E-BIKE VIA LLM / IA */}
-            <BikeAiAssistantCard
-              onDataExtracted={handleFileIngestionExtracted}
-              initialQuery={modelo ? `${marca} ${modelo}`.trim() : ''}
-            />
-
-            {/* COMPONENTE DE INGESTÃO VIA ARQUIVOS (.MD, .YAML, .TXT, .ZIP) */}
+            {/* INGESTÃO VIA ARQUIVOS (.MD, .YAML, .TXT, .ZIP) — extração local, sem IA */}
             <FileIngestionDropzone
               mode="ebike"
               onDataExtracted={handleFileIngestionExtracted}
@@ -1199,38 +1059,9 @@ export default function BikeForm({ initialData, isEditing = false }: BikeFormPro
             <RotateCcw className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">Limpar rascunho</span>
           </button>
-          <button
-            type="button"
-            onClick={handleQuickSpec}
-            disabled={isQuickSpecRunning || !marca || !modelo}
-            className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-stone-950 font-bold text-xs rounded-xl border-2 border-stone-900 shadow-[2px_2px_0px_0px_rgba(28,25,23,1)] flex items-center gap-2 transition-all disabled:opacity-50 cursor-pointer"
-          >
-            {isQuickSpecRunning ? (
-              <>
-                <ZapIcon className="w-4 h-4 animate-spin" />
-                <span>{quickSpecStage || 'Gerando ficha técnica...'}</span>
-              </>
-            ) : (
-              <>
-                <ZapIcon className="w-4 h-4" />
-                <span>⚡ Quick Spec IA</span>
-              </>
-            )}
-          </button>
         </div>
       </div>
 
-      {isQuickSpecRunning && (
-        <div className="p-4 bg-amber-50 border-2 border-amber-200 rounded-xl space-y-2">
-          <div className="flex justify-between text-xs font-mono">
-            <span className="font-bold text-amber-900">{quickSpecStage}</span>
-            <span className="text-amber-700">{quickSpecProgress}%</span>
-          </div>
-          <div className="w-full h-2 bg-amber-100 rounded-full overflow-hidden">
-            <div className="h-full bg-amber-500 transition-all duration-300" style={{ width: `${quickSpecProgress}%` }} />
-          </div>
-        </div>
-      )}
 
       {successMessage && (
         <div className="p-3 bg-emerald-50 border-2 border-emerald-700 rounded-xl text-emerald-950 font-bold text-xs flex items-center gap-2 animate-fadeIn">
@@ -2077,32 +1908,6 @@ export default function BikeForm({ initialData, isEditing = false }: BikeFormPro
         ]}
       />
 
-      {/* Bloco 2.6: Painel Integrado de Pesquisa de Imagens Reais da E-Bike na Web */}
-      <ArticleImageResearchPanel
-        articleTopic={`${marca} ${modelo}`.trim() || 'Bicicleta Elétrica'}
-        articleCategory="Comparativo"
-        articleContext={`Bicicleta elétrica ${marca} ${modelo}. Especificações: Autonomia ${autonomiaKm}km, Potência ${potenciaW}W, Peso ${pesoKg}kg.`}
-        onSetCoverImage={(url) => setImagemUrl(url)}
-        onInsertIntoBody={(markdownTag) => {
-          // Extrai o link de imagem do formato Markdown ![Alt](URL) para adicionar à galeria de fotos complementares
-          const match = markdownTag.match(/\((https?:\/\/[^\s)]+)\)/);
-          const extractedUrl = match ? match[1] : null;
-          if (extractedUrl) {
-            setGalleryImages((prev) => {
-              if (prev.includes(extractedUrl)) return prev;
-              return [...prev, extractedUrl];
-            });
-            setSuccessMessage('Imagem real adicionada à galeria complementar com sucesso!');
-          }
-        }}
-        onAddToGallery={(url) => {
-          setGalleryImages((prev) => {
-            if (prev.includes(url)) return prev;
-            return [...prev, url];
-          });
-          setSuccessMessage('Imagem real adicionada à galeria complementar com sucesso!');
-        }}
-      />
 
       {/* Bloco 2.8: Especificações Técnicas e Resumo Técnico (Ficha do Admin) */}
       <div className="bg-white border-2 border-stone-900 rounded-2xl p-6 shadow-[6px_6px_0px_0px_rgba(28,25,23,1)] space-y-6">
@@ -2635,26 +2440,6 @@ export default function BikeForm({ initialData, isEditing = false }: BikeFormPro
           <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
-              onClick={handleManualPriceSearch}
-              disabled={isManualSearching || isAiLoading}
-              className="px-3.5 py-2 bg-emerald-700 hover:bg-emerald-800 border-2 border-stone-900 text-white font-black rounded-xl text-xs flex items-center justify-center gap-1.5 cursor-pointer shadow-[2px_2px_0px_0px_rgba(28,25,23,1)] active:translate-x-[1px] active:translate-y-[1px] transition-all shrink-0 disabled:opacity-60"
-              title="Buscar cotações e ofertas reais na internet agora para atualizar o gráfico histórico"
-            >
-              {isManualSearching ? (
-                <>
-                  <RefreshCw className="w-3.5 h-3.5 animate-spin text-emerald-200" />
-                  <span>Buscando Preços Reais na Web...</span>
-                </>
-              ) : (
-                <>
-                  <Search className="w-3.5 h-3.5 text-emerald-300" />
-                  <span>Buscador Manual na Web (Preços Reais)</span>
-                </>
-              )}
-            </button>
-
-            <button
-              type="button"
               onClick={handleRecalculatePriceHistory}
               className="px-3.5 py-2 bg-stone-100 hover:bg-stone-200 border-2 border-stone-900 text-stone-900 font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 cursor-pointer shadow-[2px_2px_0px_0px_rgba(28,25,23,1)] active:translate-x-[1px] active:translate-y-[1px] transition-all shrink-0"
             >
@@ -2663,20 +2448,6 @@ export default function BikeForm({ initialData, isEditing = false }: BikeFormPro
             </button>
           </div>
         </div>
-
-        {isManualSearching && (
-          <div className="p-3 bg-emerald-50 border-2 border-emerald-600 rounded-xl text-emerald-950 font-bold text-xs flex items-center gap-2 animate-fadeIn">
-            <RefreshCw className="w-4 h-4 animate-spin text-emerald-600 shrink-0" />
-            <span>{manualSearchStage || 'Buscador Manual pesquisando cotações e ofertas reais na internet...'}</span>
-          </div>
-        )}
-
-        {manualSearchSuccess && (
-          <div className="p-3 bg-emerald-50 border-2 border-emerald-600 rounded-xl text-emerald-950 font-bold text-xs flex items-center gap-2 animate-fadeIn">
-            <Check className="w-4 h-4 text-emerald-600 shrink-0" />
-            <span>{manualSearchSuccess}</span>
-          </div>
-        )}
 
         {/* Chave de Ativação / Visibilidade do Gráfico no Site */}
         <div className="p-4 bg-stone-50 border-2 border-stone-900 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-[2px_2px_0px_0px_rgba(28,25,23,1)]">

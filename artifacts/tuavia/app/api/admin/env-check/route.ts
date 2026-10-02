@@ -40,14 +40,8 @@ export async function GET(req: NextRequest) {
       required: true,
       description: 'URL canônica do site na Hostinger (usada em sitemaps e SEO)',
     },
-    LLM_EXECUTOR_BASE_URL: {
-      status: Boolean(cleanEnvValue(process.env.LLM_EXECUTOR_BASE_URL)),
-      value: cleanEnvValue(process.env.LLM_EXECUTOR_BASE_URL) || 'Não configurado (usará localhost/APP_URL)',
-      required: false,
-      description: 'URL base do executor de IA/LLM',
-    },
 
-    // 2. Acesso Admin e Fila de IA
+    // 2. Acesso Admin
     ADMIN_PASSCODE: {
       status: Boolean(cleanEnvValue(process.env.ADMIN_PASSCODE)),
       masked: maskSecret(process.env.ADMIN_PASSCODE),
@@ -60,34 +54,9 @@ export async function GET(req: NextRequest) {
       required: true,
       description: 'Segredo de criptografia do cookie de sessão admin',
     },
-    LLM_WORKER_SECRET: {
-      status: Boolean(cleanEnvValue(process.env.LLM_WORKER_SECRET)),
-      masked: maskSecret(process.env.LLM_WORKER_SECRET),
-      required: true,
-      description: 'Segredo exclusivo para comunicação do worker de IA com o servidor',
-    },
-    LLM_JOBS_FILE: {
-      status: Boolean(cleanEnvValue(process.env.LLM_JOBS_FILE)),
-      value: cleanEnvValue(process.env.LLM_JOBS_FILE) || 'Automático (usará ./data/llm_jobs.json)',
-      required: false,
-      description: 'Caminho do arquivo persistente de fila de IA na Hostinger',
-    },
 
-    // 3. IA & Provedores
-    NVIDIA_API_KEY: {
-      status: Boolean(cleanEnvValue(process.env.NVIDIA_API_KEY)),
-      masked: maskSecret(process.env.NVIDIA_API_KEY, 6),
-      required: true,
-      description: 'Chave de API oficial NVIDIA NIM para geração de artigos e fichas por IA',
-    },
-    GEMINI_API_KEY: {
-      status: Boolean(cleanEnvValue(process.env.GEMINI_API_KEY)),
-      masked: maskSecret(process.env.GEMINI_API_KEY, 6),
-      required: false,
-      description: 'Chave Gemini (Google GenAI) para fallback e análises visuais',
-    },
 
-    // 4. Firebase Client & Admin
+    // 3. Firebase Client & Admin
     NEXT_PUBLIC_FIREBASE_PROJECT_ID: {
       status: Boolean(cleanEnvValue(process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || process.env.FIREBASE_PROJECT_ID)),
       value: cleanEnvValue(process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || process.env.FIREBASE_PROJECT_ID) || 'gen-lang-client-0046421177',

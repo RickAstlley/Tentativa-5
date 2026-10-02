@@ -8,10 +8,9 @@ import { useCrudSave } from '@/hooks/useCrudSave';
 import { TopRanking, RankingItem, RankingStoreOffer, RankingCategory, RANKING_STORAGE_KEY } from '@/types/ranking';
 import { ImageUploadField } from '@/components/admin/ImageUploadField';
 import FileIngestionDropzone from '@/components/admin/FileIngestionDropzone';
-import RankingAiAssistantCard from '@/components/admin/RankingAiAssistantCard';
 import RankingMatrixEditor from '@/components/admin/RankingMatrixEditor';
 import { ExtractedImageFile } from '@/lib/admin/fileIngestion';
-import { fetchAdminJson } from '@/lib/ai/clientResponse';
+import { fetchAdminJson } from '@/lib/apiResponse';
 import {
   Trophy,
   Sparkles,
@@ -646,91 +645,9 @@ export default function RankingForm({ initialData, isEditing = false }: RankingF
     setAiSuccessMessage('Ficha do Top Ranking importada com sucesso via arquivo!');
   };
 
-  const handleAiRankingGenerated = (data: any) => {
-    if (!data || typeof data !== 'object') return;
-    if (data.titulo) setTitulo(data.titulo);
-    if (data.subtitulo) setSubtitulo(data.subtitulo);
-    if (data.criterioAvaliacao) setCriterioAvaliacao(data.criterioAvaliacao);
-    if (data.conclusaoGeral) setConclusaoGeral(data.conclusaoGeral);
-    if (data.categoria) setCategoria(data.categoria);
-
-    if (Array.isArray(data.itens) && data.itens.length > 0) {
-      const formattedItens: RankingItem[] = data.itens.map((it: any, idx: number) => {
-        const itemLojas =
-          Array.isArray(it.lojas) && it.lojas.length > 0
-            ? it.lojas.map((l: any, lIdx: number) => ({
-                id: l.id || `store-ai-${Date.now()}-${idx}-${lIdx}`,
-                nomeLoja: l.nomeLoja || 'Loja Parceira',
-                preco: Number(l.preco) || 0,
-                url: l.url || '',
-                cupom: l.cupom || '',
-                destaque: Boolean(l.destaque),
-              }))
-            : [
-                {
-                  id: `store-ai-${Date.now()}-${idx}-1`,
-                  nomeLoja: it.linkLoja1?.nomeLoja || 'Mercado Livre',
-                  preco: Number(it.linkLoja1?.preco || it.menorPreco || 0),
-                  url: it.linkLoja1?.url || '',
-                  cupom: '',
-                  destaque: true,
-                },
-              ];
-
-        return {
-          id: it.id || `item-ai-${Date.now()}-${idx}`,
-          posicao: it.posicao || idx + 1,
-          tituloItem: it.tituloItem || `${it.marca || ''} ${it.modelo || ''}`.trim() || `Item ${idx + 1}`,
-          marca: it.marca || '',
-          categoriaItem: it.categoriaItem || 'E-Bike Urbana',
-          notaDestaque: it.notaDestaque || 'Destaque no Ranking',
-          pontosPositivos: Array.isArray(it.pontosPositivos) ? it.pontosPositivos : [],
-          pontosNegativos: Array.isArray(it.pontosNegativos) ? it.pontosNegativos : [],
-          especificacoes:
-            typeof it.especificacoes === 'object' && it.especificacoes !== null
-              ? it.especificacoes
-              : {},
-          faixaPrecoEstimado: it.faixaPrecoEstimado || (it.menorPreco ? `R$ ${Number(it.menorPreco).toLocaleString('pt-BR')}` : 'Sob consulta'),
-          imagemUrl: it.imagemUrl || '',
-          lojas: itemLojas,
-          linkLoja1: {
-            nomeLoja: itemLojas[0]?.nomeLoja || 'Mercado Livre',
-            preco: itemLojas[0]?.preco || 0,
-            url: itemLojas[0]?.url || '',
-          },
-          linkLoja2: itemLojas[1]
-            ? {
-                nomeLoja: itemLojas[1]?.nomeLoja || 'Loja Oficial',
-                preco: itemLojas[1]?.preco || 0,
-                url: itemLojas[1]?.url || '',
-              }
-            : undefined,
-          observacoes: it.observacoes || '',
-          bikeSlug: it.bikeSlug || '',
-          priceHistory: it.priceHistory || [],
-          menorPreco: Number(it.menorPreco) || 0,
-          maiorPreco: Number(it.maiorPreco) || 0,
-          potenciaW: it.potenciaW,
-          autonomiaKm: it.autonomiaKm,
-          pesoKg: it.pesoKg,
-          tempoCargaHoras: it.tempoCargaHoras,
-        };
-      });
-
-      setItens(formattedItens);
-      setQuantidadeDesejada(formattedItens.length);
-    }
-
-    setAiSuccessMessage('Top Ranking gerado e estruturado com sucesso pela IA!');
-  };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-8">
-      {/* REDATOR IA COM MULTI-PING PARA TOP RANKING */}
-      <RankingAiAssistantCard
-        onRankingGenerated={handleAiRankingGenerated}
-      />
-
       {/* Tab Navigation */}
       <div className="flex border-2 border-stone-900 rounded-xl p-1 bg-stone-100 mb-6">
         <button
@@ -759,7 +676,7 @@ export default function RankingForm({ initialData, isEditing = false }: RankingF
         </button>
       </div>
 
-      {/* COMPONENTE DE INGESTÃO VIA ARQUIVOS (.MD, .YAML, .TXT, .ZIP) */}
+      {/* INGESTÃO VIA ARQUIVOS (.MD, .YAML, .TXT, .ZIP) — extração local, sem IA */}
       <FileIngestionDropzone
         mode="ranking"
         onDataExtracted={handleFileIngestionExtracted}
