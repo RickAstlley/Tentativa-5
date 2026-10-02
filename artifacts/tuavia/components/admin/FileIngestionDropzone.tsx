@@ -52,6 +52,12 @@ import {
 import { fetchAdminJson, ApiResponseResult } from '@/lib/apiResponse';
 import { CANONICAL_SPEC_SECTIONS } from '@/lib/specAllocations';
 import {
+  runDeterministicExtraction,
+  findSpecGaps,
+  UNCONFIRMED_LABEL,
+  type SpecGap,
+} from '@/lib/admin/ebikeIngestor';
+import {
   ExtractionCacheData,
   TaggedExtractedSpec,
   saveExtractionCache,
@@ -143,9 +149,6 @@ export default function FileIngestionDropzone({
   // Estados de Execução dos Processos de Alocação
   const [runningStep, setRunningStep] = useState<number | 'all' | 'deterministic' | 'article_direct' | 'ranking_direct' | null>(null);
 
-  // Política de IA. A extração e a alocação são sempre determinísticas e
-  // não gastam token; a IA só entra se sobrar buraco e o editor permitir.
-  const [useLlmToFillGaps, setUseLlmToFillGaps] = useState(true);
   const [activeSubStep, setActiveSubStep] = useState<number | null>(null);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
@@ -193,6 +196,18 @@ export default function FileIngestionDropzone({
     if (!currentCache && !ingestedPayload) return null;
     return auditIngestionQuality(targetData, rawText);
   }, [mode, currentCache, ingestedPayload]);
+
+  // Buracos da ficha do fabricante: campos do template que sobraram vazios.
+  //
+  // Sai de `findSpecGaps` sobre as seções já alocadas, e não do
+  // `qualityReport`: o relatório diz se o bloco foi detectado, o gap diz o
+  // campo. Recalculado a partir do cache, então sobrevive ao recarregar a tela.
+  const specGaps: SpecGap[] = React.useMemo(() => {
+    if (mode !== 'ebike') return [];
+    const sections = currentCache?.specSections;
+    if (!Array.isArray(sections) || sections.length === 0) return [];
+    return findSpecGaps(sections);
+  }, [mode, currentCache]);
 
   // Inicialização e recarga do cache local
   const refreshCachesList = useCallback(() => {
@@ -361,7 +376,7 @@ export default function FileIngestionDropzone({
       } else {
         setSuccessMessage(
           `Arquivo "${payload.fileName}" carregado e estruturado nas seções canônicas. ` +
-            'Revise os campos e preencha o restante à mão.'
+            'Clique em "Iniciar Alocação Direta (Sem IA)" para distribuir nos 10 blocos.'
         );
       }
     } catch (err: any) {
@@ -423,6 +438,140 @@ export default function FileIngestionDropzone({
    */
 
   // Handlers para os modos Artigo e Ranking
+  // =========================================================================
+  // ALOCAÇÃO DETERMINÍSTICA DE E-BIKE (O QUE SUBSTITUI A ETAPA DE IA)
+  // =========================================================================
+  /**
+   * Extrai a ficha, aloca nos 10 blocos canônicos, audita e aponta o que o
+   * fabricante não informou.
+   *
+   * Tudo local: o texto bruto já está em memória e a alocação é trabalho de
+   * string. Antes esta etapa rodava no servidor, em `/api/admin/llm/ingest`
+   * com `llmPolicy 'never'`, e morreu junto com o subsistema de LLM — o upload
+   * voltava a exigir preenchimento manual. Sem a etapa de IA não há
+   * `maxDuration`, nem fila, nem upload, nem custo de servidor: a alocação
+   * acontece no navegador.
+   */
+  const handleRunEBikeDeterministic = (cacheData?: ExtractionCacheData) => {
+    const targetCache = cacheData || currentCache;
+    const rawText = targetCache?.rawText || ingestedPayload?.rawText || '';
+    const fileName = targetCache?.fileName || ingestedPayload?.fileName || 'documento.txt';
+
+    if (!rawText || rawText.trim().length === 0) {
+      setErrorMessage('Nenhum arquivo anexado. Arraste ou selecione um arquivo antes de extrair as informações.');
+      return null;
+    }
+
+    setErrorMessage(null);
+
+    try {
+      const result = runDeterministicExtraction({
+        rawText,
+        fileName,
+        parsedData: ingestedPayload?.parsedYamlOrJson,
+      });
+
+      if (!result.specSections?.length) {
+        throw new Error('A varredura determinística não retornou seções canônicas.');
+      }
+
+      const editorial = result.editorial ?? {};
+
+      /**
+       * As 10 seções canônicas + a entrada editorial.
+       *
+       * `INITIAL_MODULAR_BLOCKS` tem 11 itens e o progresso divide por 11, mas
+       * este `map` reconstruía a lista só com as 10 seções: o card editorial
+       * sumia e o contador nunca passava de 10/11 (91%). Aqui as duas partes
+       * são montadas juntas, num único `setState`.
+       */
+      const sectionBlocks: ModularBlockStatus[] = CANONICAL_SPEC_SECTIONS.map((section, index) => {
+        const found = result.specSections[index];
+        const items = found?.items ?? [];
+        const filled = items.filter(
+          (item: any) => item.value && item.value !== UNCONFIRMED_LABEL
+        );
+        return {
+          index: index + 1,
+          title: section.title,
+          shortName: section.title.replace(/^\d+\.\s*/, ''),
+          description: `${items.length} campo(s) canônico(s)`,
+          status: filled.length > 0 ? ('completed' as const) : ('idle' as const),
+          summary: `${filled.length}/${items.length} campo(s)`,
+          itemCount: items.length,
+          highlight: filled[0]
+            ? `${filled[0].label}: ${filled[0].value}`
+            : 'Sem dado verificável',
+          items,
+        };
+      });
+
+      const editorialHasContent = Boolean(
+        editorial.resumoExecutivo || editorial.idealFor ||
+        (Array.isArray(editorial.pros) && editorial.pros.length > 0)
+      );
+
+      setModularBlocks([
+        ...sectionBlocks,
+        {
+          index: 'editorial',
+          title: 'Veredito Editorial & Vantagens',
+          shortName: 'Veredito Editorial',
+          description: 'Resumo executivo, perfil de uso, prós e contras',
+          status: editorialHasContent ? ('completed' as const) : ('idle' as const),
+          summary: editorialHasContent
+            ? `${(Array.isArray(editorial.pros) ? editorial.pros.length : 0)} pró(s) / ${(Array.isArray(editorial.cons) ? editorial.cons.length : 0)} contra(s)`
+            : 'Sem veredito no documento',
+          highlight: (editorial.badge as string) || (editorialHasContent ? 'Veredito extraído do documento' : 'Sem base verificável'),
+        },
+      ]);
+
+      setCurrentActiveBlock(null);
+      setShowModularMonitor(true);
+
+      const mergedCache: ExtractionCacheData = {
+        ...(targetCache as ExtractionCacheData),
+        updatedAt: new Date().toISOString(),
+        structuredYaml: result.structuredYaml || targetCache?.structuredYaml || '',
+        identity: { ...(targetCache?.identity ?? {}), ...(result.identity as any) },
+        specSections: result.specSections,
+        editorial: { ...(targetCache?.editorial ?? {}), ...editorial },
+        priceHistoryData: result.priceHistoryData ?? targetCache?.priceHistoryData,
+        completedSteps: Array.from(new Set([...(targetCache?.completedSteps || []), 1, 2, 3])),
+        isAllocatedToForm: true,
+      };
+
+      /**
+       * Persiste ANTES de recarregar a lista.
+       *
+       * Na ordem antiga, `setCurrentCache(mergedCache)` era seguido de
+       * `refreshCachesList()`, que relê o `localStorage` e chama
+       * `setCurrentCache` com o registro antigo. O React agrupa os dois
+       * `setState` e o último ganhava — o cache voltava sem `specSections`, o
+       * painel mostrava 0/10 e restaurar do Cache reemitia lista vazia, então
+       * o formulário nunca recebia as especificações.
+       */
+      saveExtractionCache(mergedCache);
+      setCurrentCache(mergedCache);
+      emitConsolidatedData(mergedCache);
+      refreshCachesList();
+
+      const { filledItems, totalCanonicalItems, gapCount, integrityScore } = result.stats;
+      setSuccessMessage(
+        `\u2713 ${filledItems}/${totalCanonicalItems} campos preenchidos. ` +
+          (gapCount > 0
+            ? `${gapCount} campo(s) sem valor do fabricante \u2014 listados abaixo. `
+            : 'Ficha completa. ') +
+          `Integridade ${integrityScore}/100. Nenhum token de IA foi gasto.`
+      );
+      return result;
+    } catch (err: any) {
+      console.error('[Dropzone] Falha na alocação determinística:', err);
+      setErrorMessage(err.message || 'Erro durante a extração.');
+      return null;
+    }
+  };
+
   const handleRunArticleDirect = () => {
     const rawText = currentCache?.rawText || ingestedPayload?.rawText || '';
     if (!rawText) return;
@@ -1185,34 +1334,31 @@ export default function FileIngestionDropzone({
                           <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
                           <span>Ideal para Markdown, CSV e fichas técnicas oficiais</span>
                         </li>
+                        <li className="flex items-center gap-1.5 text-neutral-300">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                          <span>Marca o que o fabricante <strong>não informou</strong> como {UNCONFIRMED_LABEL}</span>
+                        </li>
                       </ul>
                     </div>
 
+
+                    <button
+                      type="button"
+                      disabled={(!currentCache && !ingestedPayload) || runningStep !== null}
+                      onClick={() => handleRunEBikeDeterministic()}
+                      className="w-full py-3 px-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 disabled:bg-neutral-800 text-neutral-950 disabled:text-neutral-500 font-black text-xs sm:text-sm flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20 transition-all cursor-pointer disabled:cursor-not-allowed"
+                    >
+                      <Zap className="w-4 h-4 fill-current" />
+                      <span>Iniciar Alocação Direta (Sem IA)</span>
+                    </button>
                   </div>
                 </div>
               )}
 
-              {/* Política de IA: desligar por completo zera o custo da extração. */}
-              {mode === 'ebike' && (
-                <label className="mt-4 flex cursor-pointer items-start gap-3 rounded-2xl border border-neutral-800 bg-neutral-950 p-4">
-                  <input
-                    type="checkbox"
-                    checked={useLlmToFillGaps}
-                    onChange={(event) => setUseLlmToFillGaps(event.target.checked)}
-                    className="mt-0.5 h-4 w-4 accent-amber-500"
-                  />
-                  <span className="min-w-0">
-                    <span className="block text-xs font-bold text-neutral-200">
-                      Permitir 1 chamada de IA para fechar buracos
-                    </span>
-                    <span className="mt-0.5 block text-[11px] leading-relaxed text-neutral-400">
-                      A extração e a alocação são sempre determinísticas e não gastam token. Com esta
-                      opção ligada, a IA é chamada uma única vez, só para os campos que ficaram sem
-                      fonte verificável. Desligada, o custo é zero e o editor preenche o que faltar.
-                    </span>
-                  </span>
-                </label>
-              )}
+              {/* A extração é determinística e termina no navegador: a etapa de
+                  IA que fechava buraco não existe mais, então a caixa de
+                  "permitir 1 chamada de IA" saiu junto com ela. O que sobrou
+                  sem dado está na lista de buracos, abaixo do relatório. */}
 
 
               {/* OPÇÕES PARA MODO ARTIGO */}
@@ -1371,6 +1517,67 @@ export default function FileIngestionDropzone({
                             </li>
                           ))}
                       </ul>
+                    </div>
+                  )}
+
+
+                  {/* LISTA COMPLETA DE BURACOS: O QUE O FABRICANTE NÃO INFORMOU */}
+                  {specGaps.length > 0 && (
+                    <div className="p-3 bg-neutral-900 rounded-xl border border-amber-500/30 space-y-2">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <span className="font-semibold text-amber-300 flex items-center gap-1.5">
+                          <FileSearch className="w-3.5 h-3.5 text-amber-400" />
+                          Campos que o fabricante não informou
+                        </span>
+                        <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40">
+                          {specGaps.length} buraco(s)
+                        </span>
+                      </div>
+
+                      <p className="text-[11px] text-neutral-400 leading-relaxed">
+                        Cada linha abaixo está marcada como <span className="text-neutral-300 font-semibold">{UNCONFIRMED_LABEL}</span>{' '}
+                        na ficha. Preencha à mão com fonte verificável.
+                      </p>
+
+                      <div className="space-y-1.5 max-h-72 overflow-y-auto pr-1">
+                        {CANONICAL_SPEC_SECTIONS.map((section, sectionIndex) => {
+                          const gaps = specGaps.filter((gap) => gap.sectionIndex === sectionIndex);
+                          if (gaps.length === 0) return null;
+
+                          return (
+                            <div
+                              key={section.title}
+                              className="p-2.5 rounded-lg bg-neutral-950/70 border border-neutral-800 space-y-1"
+                            >
+                              <div className="text-[11px] font-bold text-neutral-200">
+                                {section.title}
+                                <span className="ml-1.5 text-[10px] font-mono font-normal text-amber-400/80">
+                                  ({gaps.length} de {section.items.length} sem valor)
+                                </span>
+                              </div>
+                              <ul className="space-y-0.5">
+                                {gaps.map((gap) => (
+                                  <li
+                                    key={`${gap.sectionIndex}_${gap.label}`}
+                                    className="flex items-start gap-1.5 text-[11px] text-neutral-300"
+                                  >
+                                    <AlertCircle className="w-3 h-3 text-amber-400/80 shrink-0 mt-0.5" />
+                                    <span className="min-w-0">
+                                      <span className="text-neutral-200">{gap.label}</span>
+                                      <span className="text-neutral-500"> — {UNCONFIRMED_LABEL}</span>
+                                      {gap.synonyms.length > 0 && (
+                                        <span className="block text-[10px] text-neutral-500 font-mono">
+                                          sinônimos: {gap.synonyms.slice(0, 6).join(', ')}
+                                        </span>
+                                      )}
+                                    </span>
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          );
+                        })}
+                      </div>
                     </div>
                   )}
                 </div>
