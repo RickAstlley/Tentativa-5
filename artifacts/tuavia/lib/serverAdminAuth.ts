@@ -3,6 +3,17 @@ import { AUTHORIZED_ADMIN_EMAIL, isAuthorizedAdminEmail } from '@/lib/adminAuth'
 import { cleanEnvValue, ensureServerEnvLoaded } from '@/lib/envLoader';
 
 /**
+ * Compara duas strings em tempo constante usando SHA-256 para normalizar o tamanho.
+ * Evita vazamento de informações via timing attack.
+ */
+function safeStringCompare(a: string, b: string): boolean {
+  if (!a || !b) return false;
+  const hashA = crypto.createHash('sha256').update(a).digest();
+  const hashB = crypto.createHash('sha256').update(b).digest();
+  return crypto.timingSafeEqual(hashA, hashB);
+}
+
+/**
  * Segredo de assinatura das sessões administrativas.
  *
  * Usa SOMENTE `ADMIN_SESSION_SECRET`. Antes esta função caía em
@@ -149,7 +160,10 @@ export function verifyServerAdmin(
 
     for (const secret of [configuredSecret, legacySecret]) {
       if (!secret) continue;
-      if (tokenToCheck === secret || cleanEnvValue(tokenToCheck) === secret) {
+      if (
+        safeStringCompare(tokenToCheck, secret) ||
+        safeStringCompare(cleanEnvValue(tokenToCheck), secret)
+      ) {
         const email = adminEmail && isAuthorizedAdminEmail(adminEmail) ? adminEmail : AUTHORIZED_ADMIN_EMAIL;
         return { authorized: true, email };
       }

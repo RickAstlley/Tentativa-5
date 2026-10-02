@@ -1,23 +1,33 @@
 import { auth } from '@/lib/firebase';
 import { signOut, User } from 'firebase/auth';
 import { safeJsonStringify } from '@/lib/utils';
+import { cleanEnvValue } from '@/lib/envShared';
+
+function getAdminEmails(): string[] {
+  if (typeof window === 'undefined') {
+    return cleanEnvValue(process.env.ADMIN_EMAILS || '')
+      .split(',')
+      .map((e) => e.trim().toLowerCase())
+      .filter(Boolean);
+  }
+
+  // Client-side: cannot read server env, return empty — server validates.
+  return [];
+}
 
 /**
  * E-mail único e exclusivo autorizado para administração do TuaVia.
+ * Lido exclusivamente da variável de ambiente ADMIN_EMAILS (server-side).
  */
-export const AUTHORIZED_ADMIN_EMAIL = 'rick091.astley@gmail.com';
+export const AUTHORIZED_ADMIN_EMAIL = cleanEnvValue(process.env.ADMIN_EMAILS || '')
+  .split(',')[0]
+  ? cleanEnvValue(process.env.ADMIN_EMAILS || '')
+      .split(',')[0]
+      .trim()
+      .toLowerCase()
+  : '';
 
-export const AUTHORIZED_ADMIN_EMAILS: readonly string[] = [
-  AUTHORIZED_ADMIN_EMAIL,
-  'admin@tuavia.com.br',
-  'contato@tuavia.com.br',
-  ...(process.env.ADMIN_EMAILS
-    ? process.env.ADMIN_EMAILS.split(',').map((e) => e.trim()).filter(Boolean)
-    : []),
-  ...(process.env.NEXT_PUBLIC_ADMIN_EMAILS
-    ? process.env.NEXT_PUBLIC_ADMIN_EMAILS.split(',').map((e) => e.trim()).filter(Boolean)
-    : []),
-];
+export const AUTHORIZED_ADMIN_EMAILS: readonly string[] = getAdminEmails();
 
 const ADMIN_SESSION_KEY = 'tuavia_admin_session_auth_v1';
 
@@ -36,8 +46,10 @@ export interface AdminSessionData {
 export function isAuthorizedAdminEmail(email?: string | null): boolean {
   if (!email) return false;
   const normalized = email.toLowerCase().trim();
-  if (normalized === AUTHORIZED_ADMIN_EMAIL.toLowerCase()) return true;
-  return AUTHORIZED_ADMIN_EMAILS.some((admin) => admin.toLowerCase().trim() === normalized);
+  if (normalized === AUTHORIZED_ADMIN_EMAIL.toLowerCase().trim()) return true;
+  return AUTHORIZED_ADMIN_EMAILS.some(
+    (admin) => admin.toLowerCase().trim() === normalized
+  );
 }
 
 
@@ -96,7 +108,7 @@ export function setAdminSession(
   try {
     const sessionData: AdminSessionData = {
       email: normalizedEmail,
-      displayName: extra?.displayName || (normalizedEmail === AUTHORIZED_ADMIN_EMAIL ? 'Rick Astley' : 'Administrador'),
+       displayName: extra?.displayName || `Administrador (${normalizedEmail.split('@')[0]})`,
       photoURL: extra?.photoURL || undefined,
       authMethod: extra?.authMethod || 'quick',
       authenticatedAt: Date.now(),

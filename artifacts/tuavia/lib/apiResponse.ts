@@ -17,7 +17,7 @@
  * automaticamente.
  */
 
-import { getStoredAdminSession, AUTHORIZED_ADMIN_EMAIL } from '@/lib/adminAuth';
+import { getStoredAdminSession } from '@/lib/adminAuth';
 
 export interface AdminApiError {
   message: string;

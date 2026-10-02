@@ -2,11 +2,11 @@ import crypto from 'crypto';
 import { NextRequest, NextResponse } from 'next/server';
 import {
   isAuthorizedAdminEmail,
-  AUTHORIZED_ADMIN_EMAIL,
 } from '@/lib/adminAuth';
 import { createAdminSessionToken } from '@/lib/serverAdminAuth';
-import { getAdminAuth } from '@/lib/firebaseAdmin';
+import { getAdminAuth, ensureAdminAccessConfig } from '@/lib/firebaseAdmin';
 import { cleanEnvValue, ensureServerEnvLoaded } from '@/lib/envLoader';
+import { checkRateLimit } from '@/lib/security';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -30,8 +30,33 @@ function safeCompare(a: string, b: string): boolean {
  */
 export async function POST(req: NextRequest) {
   try {
+    // Rate limiting por IP ou identificador de sessão
+    const forwardedFor = req.headers.get('x-forwarded-for');
+    const ip = forwardedFor
+      ? forwardedFor.split(',')[0].trim()
+      : (req.headers.get('x-real-ip') || 'unknown');
+    const rateCheck = checkRateLimit(`login:${ip}`, { windowMs: 60_000, maxRequests: 10 });
+
+    if (!rateCheck.allowed) {
+      const retryAfter = Math.ceil((rateCheck.resetTime - Date.now()) / 1000);
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Muitas tentativas de login. Tente novamente em alguns minutos.',
+          errorCode: 'RATE_LIMITED',
+        },
+        {
+          status: 429,
+          headers: { 'Retry-After': String(retryAfter) },
+        }
+      );
+    }
+
     const body = await req.json();
     const { email, passcode, idToken } = body;
+
+    // Sync admin config doc so Firestore rules know which emails are admins
+    await ensureAdminAccessConfig();
 
     // ─────────────────────────────────────────────────────────────
     // FLUXO 1: Autenticação via Firebase ID Token (Login Google)
@@ -157,7 +182,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({
         success: true,
         email: normalizedEmail,
-        displayName: normalizedEmail === AUTHORIZED_ADMIN_EMAIL ? 'Rick Astley' : 'Administrador TuaVia',
+           displayName: `Administrador (${normalizedEmail.split('@')[0]})`,
         token: sessionToken,
         authMethod: 'passcode',
       });
