@@ -51,6 +51,7 @@ import {
 } from '@/lib/admin/fileIngestion';
 import { fetchAdminJson, ApiResponseResult } from '@/lib/apiResponse';
 import { CANONICAL_SPEC_SECTIONS } from '@/lib/specAllocations';
+import SpecAllocationReview from '@/components/admin/SpecAllocationReview';
 import {
   runDeterministicExtraction,
   findSpecGaps,
@@ -196,6 +197,18 @@ export default function FileIngestionDropzone({
     if (!currentCache && !ingestedPayload) return null;
     return auditIngestionQuality(targetData, rawText);
   }, [mode, currentCache, ingestedPayload]);
+
+  /**
+   * Resultado da última alocação, para o painel de conferência.
+   *
+   * Fica em estado e não no cache porque `specGaps` e o score saem da auditoria
+   * e não são recalculáveis a partir do que foi salvo.
+   */
+  const [review, setReview] = useState<{
+    gaps: SpecGap[];
+    integrityScore: number;
+    truncated: boolean;
+  } | null>(null);
 
   // Buracos da ficha do fabricante: campos do template que sobraram vazios.
   //
@@ -569,6 +582,12 @@ export default function FileIngestionDropzone({
       setCurrentCache(mergedCache);
       emitConsolidatedData(mergedCache);
       refreshCachesList();
+
+      setReview({
+        gaps: result.gaps,
+        integrityScore: result.stats.integrityScore,
+        truncated: result.stats.truncated,
+      });
 
       const { filledItems, totalCanonicalItems, gapCount, integrityScore } = result.stats;
       setSuccessMessage(
@@ -978,82 +997,20 @@ export default function FileIngestionDropzone({
                     })()}
                   </div>
 
-                  {/* GRID DOS 10 BLOCOS CANÔNICOS + EDITORIAL */}
-                  {showModularMonitor && (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2.5 pt-1">
-                      {modularBlocks.map((block) => {
-                        const isRunning = block.status === 'running' || currentActiveBlock === block.index;
-                        const isCompleted = block.status === 'completed';
-                        const isFailed = block.status === 'failed';
-
-                        return (
-                          <div
-                            key={String(block.index)}
-                            className={`p-3 rounded-xl border transition-all duration-200 flex flex-col justify-between ${
-                              isRunning
-                                ? 'bg-neutral-900 border-lime-400/80 shadow-lg shadow-lime-500/10 ring-1 ring-lime-400'
-                                : isCompleted
-                                ? 'bg-neutral-900/90 border-emerald-500/30'
-                                : isFailed
-                                ? 'bg-rose-950/20 border-rose-500/30'
-                                : 'bg-neutral-950/40 border-neutral-800 opacity-60'
-                            }`}
-                          >
-                            <div className="flex items-start justify-between gap-1.5">
-                              <div className="flex items-center gap-1.5">
-                                <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-neutral-800 text-neutral-300 border border-neutral-700">
-                                  {block.index === 'editorial' ? 'ED' : `B${block.index}`}
-                                </span>
-                                <span className="text-xs font-bold text-neutral-200 truncate">
-                                  {block.shortName}
-                                </span>
-                              </div>
-
-                              <div>
-                                {isRunning ? (
-                                  <RefreshCw className="w-4 h-4 animate-spin text-lime-400" />
-                                ) : isCompleted ? (
-                                  <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                                ) : isFailed ? (
-                                  <AlertCircle className="w-4 h-4 text-rose-400" />
-                                ) : (
-                                  <Clock className="w-3.5 h-3.5 text-neutral-500" />
-                                )}
-                              </div>
-                            </div>
-
-                            <p className="text-[11px] text-neutral-400 mt-1 line-clamp-1">
-                              {block.description}
-                            </p>
-
-                            <div className="mt-2 pt-2 border-t border-neutral-800/80 flex items-center justify-between text-[11px]">
-                              {isRunning ? (
-                                <span className="text-lime-300 font-semibold text-[10px] animate-pulse flex items-center gap-1">
-                                  <span className="w-1.5 h-1.5 rounded-full bg-lime-400 animate-ping" />
-                                  Ping em execução...
-                                </span>
-                              ) : isCompleted ? (
-                                <div className="flex flex-col w-full">
-                                  <span className="text-lime-300 font-mono text-[11px] truncate font-medium" title={block.highlight}>
-                                    {block.highlight || 'Concluído'}
-                                  </span>
-                                  {block.summary && (
-                                    <span className="text-[10px] text-neutral-400">
-                                      {block.summary}
-                                    </span>
-                                  )}
-                                </div>
-                              ) : (
-                                <span className="text-neutral-500 text-[10px]">
-                                  Aguardando...
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
+                  {/* PAINEL DE CONFERÊNCIA DA ALOCAÇÃO (e-bike) */}
+                  {mode === 'ebike' && showModularMonitor && (
+                    <SpecAllocationReview
+                      specSections={currentCache?.specSections ?? []}
+                      gaps={review?.gaps ?? specGaps}
+                      rawText={currentCache?.rawText ?? ingestedPayload?.rawText ?? ''}
+                      integrityScore={review?.integrityScore ?? 0}
+                      truncated={(review?.truncated ?? false) || (currentCache?.extractionWarnings?.length ?? 0) > 0}
+                      truncatedWarning={currentCache?.extractionWarnings?.[0]}
+                    />
                   )}
+
+                  {/* GRID DOS 10 BLOCOS CANÔNICOS + EDITORIAL */}
+                  
                 </div>
               )}
             </div>
