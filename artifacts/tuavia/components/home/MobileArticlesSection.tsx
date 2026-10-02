@@ -63,7 +63,9 @@ export default function MobileArticlesSection({ articles, curation }: MobileArti
         const isLeg = matched.category === 'Legislação' || matched.title.toLowerCase().includes('contran');
         return {
           ...matched,
-          editorialBadge: cur.editorialBadge || cur.badge || (isLeg ? 'LEGISLAÇÃO & NORMAS' : 'DESTAQUE PRINCIPAL'),
+          // O tipo tem `badge`; `editorialBadge` nunca existiu em
+          // CuratedArticleHighlight, então o fallback do meio lia campo inexistente.
+          editorialBadge: cur.badge || (isLeg ? 'LEGISLAÇÃO & NORMAS' : 'DESTAQUE PRINCIPAL'),
           editorialHook: cur.editorialHook || matched.excerpt,
         };
       }

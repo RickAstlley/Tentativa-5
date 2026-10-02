@@ -29,7 +29,7 @@ import {
   Compass,
   TrendingDown
 } from 'lucide-react';
-import { EnrichedEBikeDetail, EBikeStoreOffer, EBikeGrouped, EBikeReview } from '@/types/ebike';
+import { EnrichedEBikeDetail, EBikeStoreOffer, EBikeGrouped, EBikeReview, EBikeSpecSection } from '@/types/ebike';
 import { getGroupedEBikes, getEnrichedEBikeDetail, buildEnrichedDetailFromBike } from '@/lib/ebikes';
 
 // Subcomponentes modulares
@@ -44,6 +44,29 @@ import RelatedSimilarBikes from '@/components/detail/RelatedSimilarBikes';
 interface BikeDetailPageClientProps {
   initialDetail?: EnrichedEBikeDetail | null;
   slug?: string;
+}
+
+/**
+ * Capacidade da bateria em Wh, lida das seções canônicas.
+ *
+ * A capacidade não mora em campo próprio da e-bike: `EBikeGrouped` não tem
+ * `bateria`, e quem escreve o valor é o alocador, na seção 3 "Bateria &
+ * Energia", campo "Capacidade Total" — no formato "499 Wh" ou "624 Wh".
+ *
+ * Antes o código lia `detail.especificacoes.bateria.capacidadeWh`, que não
+ * existe em tipo nenhum: vinha `undefined` e o card de autonomia usava a
+ * estimativa padrão. Retorna `undefined` quando a ficha não traz o campo, e o
+ * `RealRangeComparisonCard` cai na própria estimativa.
+ */
+function capacidadeWhFicha(specSections: EBikeSpecSection[] | undefined): number | undefined {
+  for (const section of specSections ?? []) {
+    for (const item of section.items ?? []) {
+      if (!/capacidade\s*total/i.test(item.label ?? '')) continue;
+      const wh = Number(String(item.value ?? '').replace(/[^\d.,]/g, '').replace(',', '.'));
+      if (Number.isFinite(wh) && wh > 0) return wh;
+    }
+  }
+  return undefined;
 }
 
 export default function BikeDetailPageClient({ initialDetail, slug }: BikeDetailPageClientProps) {
@@ -113,7 +136,9 @@ export default function BikeDetailPageClient({ initialDetail, slug }: BikeDetail
   const priceHistory = detail?.priceHistory || [];
   const showPriceChart = detail?.showPriceChart ?? bike?.showPriceChart ?? true;
   const seoReport = detail?.seoReport || bike?.seoReport;
-  const badge = bike?.badge || seoReport?.badge || detail?.badge;
+  // `EBikeSEOReport` não tem `badge` — o termo do meio era sempre `undefined`
+  // e só poluía a cadeia de fallback.
+  const badge = bike?.badge || detail?.badge;
   const tagOferta = bike?.tagOferta || detail?.bike?.tagOferta;
   const targetPersona = seoReport?.targetBuyerPersona;
   const secondaryKeywords = seoReport?.secondaryKeywords || [];
@@ -722,7 +747,7 @@ export default function BikeDetailPageClient({ initialDetail, slug }: BikeDetail
                     bikeSlug={bike.slug}
                     bikeModelo={`${bike.marca} ${bike.modelo}`}
                     advertisedRangeKm={bike.autonomiaKm}
-                    batteryWh={detail?.especificacoes?.bateria?.capacidadeWh}
+                    batteryWh={capacidadeWhFicha(specSections)}
                     motorWatts={bike.potenciaW}
                     onReviewAdded={handleReviewAdded}
                     compact={true}

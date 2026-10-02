@@ -8,6 +8,7 @@ import { getCuratedHomeArticles } from '@/lib/articles';
 import { EBikeGrouped } from '@/types/ebike';
 import { Article } from '@/types/article';
 import { TopRanking } from '@/types/ranking';
+import { HomeCurationData } from '@/types/homeCuration';
 
 import { headers } from 'next/headers';
 
@@ -15,7 +16,16 @@ import { headers } from 'next/headers';
 export const dynamic = 'auto';
 
 // Curadoria determinística local (sem dependência de IA/Armazenamento em disco)
-function generateDeterministicCuration(bikes: EBikeGrouped[], articles: Article[]) {
+/**
+ * Monta a curadoria da home a partir dos dados já carregados.
+ *
+ * O retorno é anotado de propósito. O objeto tem alguns 40 campos aninhados, e
+ * sem anotação o TypeScript o inferia por conta própria; na passagem para
+ * `initialCuration` o resultado não batia com `HomeCurationData` mesmo
+ * sendo o mesmo objeto. A anotação não muda o valor — só declara o contrato
+ * onde o objeto é criado, e é aí que o erro aparece se houver.
+ */
+function generateDeterministicCuration(bikes: EBikeGrouped[], articles: Article[]): HomeCurationData {
   const safeBikes = [...bikes];
   const safeArticles = [...articles].filter((a) => !a.hideFromFeed);
 
