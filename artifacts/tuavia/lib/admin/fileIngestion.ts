@@ -15,48 +15,8 @@ import {
   sanitizeBatteryChemistryValue,
   CANONICAL_SPEC_SECTIONS,
 } from '@/lib/specAllocations';
+import { isUnconfirmedValue } from '@/lib/admin/specAuditor';
 import { SpecStatus, SpecConfidence } from '@/types/ebike';
-
-/**
- * Termos que indicam que o valor extraído do documento não foi confirmado.
- *
- * Inlineado de `lib/ai/deterministicAuditor.ts`, que foi removido junto com o
- * subsistema de LLM. O auditor determinístico inteiro dependia de modelo; esta
- * função não — é só uma lista de regex, sem nenhuma chamada de IA, e a ingestão
- * de arquivo continua funcionando sem ela.
- */
-const UNCONFIRMED_VALUE_PATTERNS = [
-  /^não\s*informad[oa]/i,
-  /^nao\s*informad[oa]/i,
-  /^não\s*especificad[oa]/i,
-  /^nao\s*especificad[oa]/i,
-  /^não\s*confirmad[oa]/i,
-  /^nao\s*confirmad[oa]/i,
-  /^não\s*declarad[oa]/i,
-  /^nao\s*declarad[oa]/i,
-  /^não\s*homologad[oa]/i,
-  /^nao\s*homologad[oa]/i,
-  /^não\s*aferid[oa]/i,
-  /^nao\s*aferid[oa]/i,
-  /^pendente/i,
-  /^sem\s*confirma[cç][aã]o/i,
-  /^a\s*definir/i,
-  /^n\/?a$/i,
-  /^não\s*consta/i,
-  /^nao\s*consta/i,
-  /^desconhecido/i,
-  /^indispon[ií]vel/i,
-  /^em\s*apura[cç][aã]o/i,
-  /^\?+$/,
-  /^-+$/,
-];
-
-function isUnconfirmedValue(value?: string | null): boolean {
-  if (!value) return true;
-  const trimmed = String(value).trim();
-  if (!trimmed) return true;
-  return UNCONFIRMED_VALUE_PATTERNS.some((pattern) => pattern.test(trimmed));
-}
 
 export type { BinarySignatureInfo };
 
