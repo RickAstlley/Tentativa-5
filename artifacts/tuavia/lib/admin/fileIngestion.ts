@@ -1551,10 +1551,16 @@ export function parseEBikeDeterministic(
     titleDecomposed.modelo ||
     (fileName ? fileName.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ') : 'Modelo a definir');
 
-  // Regex para métricas fundamentais
+  // Regex para métricas fundamentais.
+  //
+  // O peso aceita vírgula como decimal: ficha técnica brasileira escreve
+  // "22,5 kg", e o padrão anterior só aceitava ponto, então esse valor caía no
+  // `findSpec` — que lia certo — mas não no regex de reserva.
   const potenciaMatch = combinedText.match(/\b(\d{3,4})\s*W(?:atts)?\b/i);
   const autonomiaMatch = combinedText.match(/\b(\d{2,3})\s*km\b/i);
-  const pesoMatch = combinedText.match(/\bpeso(?:\s*da\s*bicicleta|\s*total)?[:\s]+(\d{2}(?:\.\d+)?)\s*kg\b/i) || combinedText.match(/\b(\d{2}(?:\.\d+)?)\s*kg\b/i);
+  const pesoMatch =
+    combinedText.match(/\bpeso(?:\s*da\s*bicicleta|\s*total)?[:\s]+(\d{1,3}(?:[.,]\d+)?)\s*kg\b/i) ||
+    combinedText.match(/\b(\d{1,3}(?:[.,]\d+)?)\s*kg\b/i);
   const tempoCargaMatch = combinedText.match(/\btempo\s*de\s*(?:recarga|carga|carregamento)[:\s]+(\d{1,2}(?:\s*a\s*\d{1,2})?)\s*(?:horas|h|hrs)\b/i);
   const cargaMatch =
     combinedText.match(/carga(?:\s*m[aá]xima)?[:\s]+(\d{2,3})\s*kg/i) ||
@@ -1618,10 +1624,14 @@ export function parseEBikeDeterministic(
   const rawPeso = findSpec('peso da bicicleta', 'peso total', 'peso', 'massa');
   let finalPeso: number | null = null;
   if (rawPeso && !/n[aã]o\s*informad/i.test(rawPeso)) {
-    const pNum = Number(String(rawPeso).replace(/[^0-9.]/g, ''));
+    // `parseBrazilianCurrency` é o parser que já existe neste arquivo e trata
+    // vírgula como decimal. O anterior (`replace(/[^0-9.]/g, '')`) removia a
+    // vírgula em vez de convertê-la, e "22,5 kg" virava 225 — um peso de
+    // 225 kg que ainda contaminava o texto do veredito editorial.
+    const pNum = parseBrazilianCurrency(rawPeso);
     if (pNum > 0) finalPeso = pNum;
   } else if (pesoMatch) {
-    finalPeso = Number(pesoMatch[1]) || null;
+    finalPeso = parseBrazilianCurrency(pesoMatch[1]) || null;
   }
 
   const rawTempo = findSpec('tempo de recarga', 'tempo de carga', 'recarga');
