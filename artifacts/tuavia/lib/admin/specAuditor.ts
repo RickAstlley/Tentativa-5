@@ -24,7 +24,7 @@ import { EBikeSpecItem, EBikeSpecSection, SpecConfidence, SpecStatus } from '@/t
  * de fonte e o auditor — com razão — não conta rótulo genérico como fonte.
  */
 
-export const GENERIC_SOURCE_LABELS: readonly string[] = [
+const GENERIC_SOURCE_LABELS: readonly string[] = [
   'catálogo oficial',
   'manual do fabricante',
   'especificação comercial',
@@ -119,7 +119,7 @@ export function isUnconfirmedValue(value?: string | null): boolean {
 /**
  * Verifica se uma fonte é puramente genérica (sem domínio ou URL real).
  */
-export function isGenericSource(source?: string | null): boolean {
+function isGenericSource(source?: string | null): boolean {
   if (!source) return true;
   const s = String(source).trim().toLowerCase();
   if (!s) return true;
@@ -129,7 +129,7 @@ export function isGenericSource(source?: string | null): boolean {
 /**
  * Remove anotações artificiais como [resultado 1] ou domínios autoreferenciais
  */
-export function cleanSourceString(source?: string | null): string {
+function cleanSourceString(source?: string | null): string {
   if (!source) return '';
   let cleaned = String(source)
     .replace(/\[resultado\s*\d+\]/gi, '')
@@ -147,7 +147,7 @@ export function cleanSourceString(source?: string | null): string {
 /**
  * Audita individualmente um item de especificação técnica.
  */
-export function auditSpecItem(
+function auditSpecItem(
   item: EBikeSpecItem,
   fallbackDomain?: string
 ): { item: EBikeSpecItem; changed: boolean; reason?: string } {
@@ -238,7 +238,7 @@ export function auditSpecItem(
 /**
  * Sanitiza uma lista de itens de especificação garantindo a conformidade determinística.
  */
-export function sanitizeSpecItems(items: EBikeSpecItem[], fallbackDomain?: string): EBikeSpecItem[] {
+function sanitizeSpecItems(items: EBikeSpecItem[], fallbackDomain?: string): EBikeSpecItem[] {
   if (!Array.isArray(items)) return [];
   return items.map((it) => auditSpecItem(it, fallbackDomain).item);
 }
@@ -246,7 +246,7 @@ export function sanitizeSpecItems(items: EBikeSpecItem[], fallbackDomain?: strin
 /**
  * Audita uma seção completa de especificações e atualiza o auditReport da seção.
  */
-export function auditSpecSection(section: EBikeSpecSection, fallbackDomain?: string): EBikeSpecSection {
+function auditSpecSection(section: EBikeSpecSection, fallbackDomain?: string): EBikeSpecSection {
   if (!section || !Array.isArray(section.items)) {
     return {
       title: section?.title || 'Seção',

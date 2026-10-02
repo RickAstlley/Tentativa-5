@@ -384,7 +384,7 @@ export function runDeterministicExtraction(options: IngestOptions): IngestionRes
 }
 
 /** Agrupa os buracos por seção, para a tela mostrar "3 pendências" por bloco. */
-export function groupGapsBySection(gaps: SpecGap[]): Array<{
+function groupGapsBySection(gaps: SpecGap[]): Array<{
   sectionIndex: number;
   sectionTitle: string;
   fields: SpecGap[];
