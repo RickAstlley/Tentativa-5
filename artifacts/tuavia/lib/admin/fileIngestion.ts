@@ -1365,7 +1365,17 @@ async function parseZipFile(file: File): Promise<IngestedFilePayload> {
     // 2. Arquivos de texto / dados estruturados
     if (['md', 'markdown', 'txt', 'yaml', 'yml', 'json', 'csv'].includes(entryExt)) {
       try {
-        const text = await entry.async('string');
+        /**
+         * `entry.async('string')` decodifica como UTF-8 fixo, que é o mesmo
+         * bug que `readFileAsText` tinha: ficha dentro de ZIP vinda do Excel
+         * brasileiro é Latin-1 e virava mojibake. Lendo os bytes e passando
+         * por `decodeTextBuffer`, o ZIP passa a ter a mesma detecção do upload
+         * direto — BOM, UTF-8 estrito, depois Windows-1252.
+         */
+        const rawEntry = await entry.async('uint8array');
+        const text = decodeTextBuffer(
+          rawEntry.buffer.slice(rawEntry.byteOffset, rawEntry.byteOffset + rawEntry.byteLength) as ArrayBuffer
+        );
         const cleanT = text.replace(/^\uFEFF/, '').trim();
         if (cleanT.length > 0) {
           textSnippets.push({

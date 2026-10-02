@@ -272,8 +272,17 @@ export default function FileIngestionDropzone({
       preco: identityObj.menorPreco || identityObj.preco || identityObj.precoDe,
       menorPreco: identityObj.menorPreco || identityObj.preco || identityObj.precoDe,
       precoDe: identityObj.precoDe,
-      badge: editorialObj.badge || editorialObj.notaDestaque || identityObj.badge || '🏆 Custo-Benefício 2026',
-      notaDestaque: editorialObj.notaDestaque || editorialObj.badge || identityObj.badge || '🏆 Custo-Benefício 2026',
+      /**
+       * Sem fallback hardcoded de badge.
+       *
+       * O ingestor zera o badge quando a ficha não sustenta a identidade — é a
+       * guarda anti-alucinação. Este `|| '🏆 Custo-Benefício 2026'` a desfaía
+       * na camada seguinte: toda ficha voltava com selo de custo-benefício,
+       * inclusive as que nada confirmaram. Vazio é a resposta honesta; quem
+       * quiser um selo escreve um, com fonte.
+       */
+      badge: editorialObj.badge || editorialObj.notaDestaque || identityObj.badge || '',
+      notaDestaque: editorialObj.notaDestaque || editorialObj.badge || identityObj.badge || '',
       resumoExecutivo: editorialObj.resumoExecutivo || editorialObj.verdict || editorialObj.editorialVerdict || '',
       verdict: editorialObj.resumoExecutivo || editorialObj.verdict || editorialObj.editorialVerdict || '',
       idealFor: editorialObj.idealFor || editorialObj.idealPara || '',

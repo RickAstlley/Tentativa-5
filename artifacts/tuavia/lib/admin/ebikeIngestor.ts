@@ -125,12 +125,20 @@ export interface IngestOptions {
 
 /* ──────────────────────────── identidade ──────────────────────────── */
 
+/**
+ * Monta a identidade a partir do resultado da varredura.
+ *
+ * Recebe o `deterministic` já calculado em vez de chamar o parser de novo.
+ * Antes ele rodava duas vezes por extração — 50% do tempo jogado fora — e,
+ * pior, as duas chamadas podiam disagree: `buildIdentity` usava
+ * `options.payload?.parsedYamlOrJson`, que o chamador não preenche (ele manda
+ * `parsedData`), então uma via ignorava o YAML/JSON do arquivo e a outra não.
+ * Resultado: identidade com um número e a seção alocada com outro.
+ */
 function buildIdentity(
-  payload: IngestedFilePayload | undefined,
-  rawText: string,
+  deterministic: { identity?: Record<string, unknown> },
   fileName: string
 ): Record<string, unknown> {
-  const deterministic = parseEBikeDeterministic(rawText, payload?.parsedYamlOrJson, fileName);
   const fromFile = decomposeBrandAndModel(fileName);
 
   return {
@@ -346,7 +354,7 @@ export function runDeterministicExtraction(options: IngestOptions): IngestionRes
   // Tabelas markdown viram pares rótulo/valor, formato que o alocador normaliza.
   const flatSpecs = extractMarkdownTablesAndSpecs(rawText);
   const deterministic = parseEBikeDeterministic(rawText, parsedData, fileName);
-  const identity = buildIdentity(options.payload, rawText, fileName);
+  const identity = buildIdentity(deterministic, fileName);
 
   const incomingSections = [
     Object.entries(flatSpecs).map(([label, value]) => ({ label, value: String(value) })),
