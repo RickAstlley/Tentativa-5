@@ -66,9 +66,16 @@ export function getFirebaseDatabaseId(): string {
   return '(default)';
 }
 
-const apiKey = cleanEnvValue(process.env.NEXT_PUBLIC_FIREBASE_API_KEY || process.env.FIREBASE_API_KEY) || appletConfig.apiKey || 'AIzaSyBXDLXcdIZ6qWkEQMr_RlQE-B8R2o8OKPk';
+const apiKey = cleanEnvValue(process.env.NEXT_PUBLIC_FIREBASE_API_KEY || process.env.FIREBASE_API_KEY) || appletConfig.apiKey;
 const projectId = getFirebaseProjectId();
 const databaseId = getFirebaseDatabaseId();
+
+if (!apiKey || apiKey.trim() === '') {
+  throw new Error(
+    'NEXT_PUBLIC_FIREBASE_API_KEY or FIREBASE_API_KEY must be set in environment. ' +
+      'Copy .env.example to .env.local and fill in your Firebase project credentials.'
+  );
+}
 
 const firebaseConfig = {
   apiKey,

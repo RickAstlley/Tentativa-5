@@ -448,3 +448,31 @@ export async function withAdminTimeout<T>(
 
   return Promise.race([wrappedPromise, timeoutPromise]);
 }
+
+/**
+ * Ensures the Firestore rules admin config document exists.
+ * Called during login to sync ADMIN_EMAILS env var with the document
+ * that Firestore security rules reference in isAdmin().
+ */
+export async function ensureAdminAccessConfig(): Promise<void> {
+  const db = getAdminDb();
+  if (!db) return;
+
+  const adminEmailsRaw = cleanEnvValue(process.env.ADMIN_EMAILS || '');
+  const emails = adminEmailsRaw
+    .split(',')
+    .map((e) => e.trim().toLowerCase())
+    .filter(Boolean);
+
+  if (emails.length === 0) {
+    console.warn('[firebaseAdmin] ADMIN_EMAILS not set; skipping admin config sync.');
+    return;
+  }
+
+  try {
+    const ref = db.collection('config').doc('adminAccess');
+    await ref.set({ adminEmails: emails }, { merge: true });
+  } catch (err: any) {
+    console.warn('[firebaseAdmin] Failed to sync admin access config:', err?.message);
+  }
+}

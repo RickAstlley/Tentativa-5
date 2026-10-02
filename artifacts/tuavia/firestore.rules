@@ -2,10 +2,28 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // Admin authorization helper:
+    // 1. Checks Firebase Auth custom claim `admin == true`
+    // 2. Falls back to reading admin email list from config/adminAccess
+    function isAdmin() {
+      if (request.auth == null) {
+        return false;
+      }
+
+      // Prefer custom claims (set server-side via Admin SDK)
+      if (request.auth.token.admin == true) {
+        return true;
+      }
+
+      // Fallback: check email against config document
+      let configDoc = get(/databases/$(database)/documents/config/adminAccess);
+      return configDoc.data.adminEmails.hasAny([request.auth.token.email]);
+    }
+
     // Regra para Bikes
     match /bikes/{bikeSlug} {
       allow read: if true;
-      allow write: if request.auth != null;
+      allow write: if isAdmin();
     }
 
     // Regra para Avaliações e Comentários da Comunidade
@@ -30,15 +48,15 @@ service cloud.firestore {
         && request.resource.data.comment is string && request.resource.data.comment.size() <= 1600
         && (!('status' in request.resource.data) || request.resource.data.status in ['approved', 'pending']);
 
-      // Atualização apenas de contagem de votos úteis para público, ou total para autenticados
-      allow update: if request.auth != null || (
-        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['helpfulCount'])
-        && request.resource.data.helpfulCount is number
-        && request.resource.data.helpfulCount == resource.data.helpfulCount + 1
-      );
+       // Atualização apenas de contagem de votos úteis para público, ou total para admins
+       allow update: if isAdmin() || (
+         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['helpfulCount'])
+         && request.resource.data.helpfulCount is number
+         && request.resource.data.helpfulCount == resource.data.helpfulCount + 1
+       );
 
       // Exclusão permitida apenas para administradores autenticados
-      allow delete: if request.auth != null;
+      allow delete: if isAdmin();
     }
 
     // Ambiente Isolado de Staging & Caches de Extração (Separado do Catálogo de E-Bikes)
@@ -49,10 +67,10 @@ service cloud.firestore {
       allow read, write, delete: if false;
     }
 
-    // Coleções gerais
+    // Coleções gerais - leitura pública limitada a documentos, escrita apenas para admins
     match /{document=**} {
       allow read: if true;
-      allow write: if request.auth != null;
+      allow write: if isAdmin();
     }
   }
 }

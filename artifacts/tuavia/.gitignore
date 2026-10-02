@@ -35,3 +35,4 @@ public/sitemap.xml
 # Saída do cron do pipeline de IA
 data/cron.log
 data/cron-ai-pipeline.lock
+.env.local
