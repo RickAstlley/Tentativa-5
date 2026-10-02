@@ -19,7 +19,7 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { fetchAdminJson, type ApiResponseResult } from '@/lib/ai/clientResponse';
+import { fetchAdminJson, type ApiResponseResult } from '@/lib/apiResponse';
 
 export type Tag = string;
 

@@ -140,15 +140,9 @@ export function initEnv() {
   const keysToClean = [
     'APP_URL',
     'NEXT_PUBLIC_APP_URL',
-    'LLM_EXECUTOR_BASE_URL',
     'ADMIN_PASSCODE',
     'ADMIN_TOKEN',
     'ADMIN_SESSION_SECRET',
-    'LLM_WORKER_SECRET',
-    'LLM_JOBS_FILE',
-    'NVIDIA_API_KEY',
-    'NVIDIA_BASE_URL',
-    'GEMINI_API_KEY',
     'FIREBASE_ADMIN_SERVICE_ACCOUNT',
     'FIREBASE_SERVICE_ACCOUNT',
     'FIREBASE_ADMIN_CREDENTIALS',
@@ -244,16 +238,12 @@ export function initEnv() {
   const DEFAULT_ENV_MAP = {
     APP_URL: 'https://tuavia.com.br',
     NEXT_PUBLIC_APP_URL: 'https://tuavia.com.br',
-    LLM_EXECUTOR_BASE_URL: 'https://tuavia.com.br',
     NEXT_PUBLIC_FIREBASE_PROJECT_ID: 'tuavia-cf9ba',
     NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: 'tuavia-cf9ba.firebaseapp.com',
     NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: 'tuavia-cf9ba.firebasestorage.app',
     NEXT_PUBLIC_FIREBASE_DATABASE_ID: '(default)',
     NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: '994446221503',
     NEXT_PUBLIC_FIREBASE_APP_ID: '1:994446221503:web:41239ea88ef21951b6660a',
-    NVIDIA_BASE_URL: 'https://integrate.api.nvidia.com/v1',
-    LLM_WORKER_INTERVAL_MS: '10000',
-    LLM_WORKER_MAX_JOBS_PER_CYCLE: '1',
   };
 
   /**
@@ -263,7 +253,6 @@ export function initEnv() {
   const REQUIRED_SECRETS = [
     'ADMIN_PASSCODE',
     'ADMIN_SESSION_SECRET',
-    'LLM_WORKER_SECRET',
   ];
 
   if (!process.env.SKIP_SECRET_CHECK) {
@@ -330,10 +319,8 @@ export function initEnv() {
 
   return {
     loadedFiles,
-    hasNvidia: Boolean(process.env.NVIDIA_API_KEY),
     hasAdminPasscode: Boolean(process.env.ADMIN_PASSCODE),
     hasAppUrl: Boolean(process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL),
-    hasWorkerSecret: Boolean(process.env.LLM_WORKER_SECRET),
   };
 }
 

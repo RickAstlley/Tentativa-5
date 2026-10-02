@@ -35,11 +35,7 @@ const JSON_FILES_CONFIG = [
   { name: 'published_bikes.json', defaultContent: '[]\n' },
   { name: 'published_rankings.json', defaultContent: '[]\n' },
   { name: 'deleted_slugs.json', defaultContent: '{"bikes":[],"articles":[],"rankings":[]}\n' },
-  { name: 'global_radar_feed.json', defaultContent: '[]\n' },
-  { name: 'ai_radar_pautas.json', defaultContent: '[]\n' },
-  { name: 'home_ai_curation.json', defaultContent: '{}\n' },
   { name: 'last_firestore_sync.json', defaultContent: '{}\n' },
-  { name: 'llm_jobs.json', defaultContent: '[]\n' },
 ];
 
 // Ensure firebase-applet-config.json exists for safe compilation

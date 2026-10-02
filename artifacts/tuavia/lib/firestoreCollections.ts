@@ -28,8 +28,6 @@ export const COLLECTIONS = {
   rankings: 'rankings',
   reviews: 'reviews',
   settings: 'settings',
-  llmJobs: 'llm_jobs',
-  globalRadar: 'global_radar',
   extractionStaging: 'extraction_staging',
 } as const;
 

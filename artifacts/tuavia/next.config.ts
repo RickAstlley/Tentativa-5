@@ -83,7 +83,7 @@ const nextConfig: NextConfig = {
       "img-src 'self' data: blob: https:",
       // Sem os domínios de anúncio em connect-src, o script carrega mas nenhuma
       // requisição de Criativo sai: o slot fica permanentemente vazio.
-      "connect-src 'self' https://www.google-analytics.com https://region1.google-analytics.com https://integrate.api.nvidia.com https://googleads.g.com https://pagead2.googlesyndication.com https://csi.gstatic.com https://ep1.adtrafficquality.google https://ep2.adtrafficquality.google",
+      "connect-src 'self' https://www.google-analytics.com https://region1.google-analytics.com https://googleads.g.com https://pagead2.googlesyndication.com https://csi.gstatic.com https://ep1.adtrafficquality.google https://ep2.adtrafficquality.google",
       "frame-src 'self' https://www.googletagmanager.com https://googleads.g.doubleclick.net https://tpc.googlesyndication.com",
       "object-src 'none'",
       "base-uri 'self'",

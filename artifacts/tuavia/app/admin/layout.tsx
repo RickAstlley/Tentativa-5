@@ -17,14 +17,11 @@ import CommandPalette from '@/components/admin/CommandPalette';
 import { getStoredAdminSession } from '@/lib/adminAuth';
 
 const KEYBOARD_SHORTCUTS: Record<string, string> = {
-  '/': '/admin/ia?mode=chat',
   'gn': '/admin/artigos/novo',
   'gr': '/admin/rankings/novo',
   'gb': '/admin/bikes/novo',
-  'ga': '/admin/ia',
   'gd': '/admin',
   'gc': '/admin/configuracoes',
-  'gt': '/admin/telemetry',
 };
 
 function AdminLayoutContent({ children }: { children: React.ReactNode }) {
@@ -35,7 +32,6 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
   const { collapsed, toggleCollapsed, toggleMobileOpen } = useAdminSidebar();
 
   const isLoginPage = pathname === '/admin/login';
-  const isCopilotPage = pathname.startsWith('/admin/ia');
   const isCreatePage = pathname.startsWith('/admin/criar');
   const [authChecked, setAuthChecked] = useState(false);
 
@@ -72,10 +68,12 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
         if (key === 'k' || key === '/') {
           e.preventDefault();
           const searchInput = document.querySelector('input[type="search"]') as HTMLInputElement;
+          // Sem campo de busca visível, o atalho agora navega para a home do
+          // admin em vez de abrir o chat do copiloto, que não existe mais.
           if (searchInput) {
             searchInput.focus();
           } else {
-            router.push('/admin/ia?mode=chat');
+            router.push('/admin');
           }
         }
       }
@@ -113,8 +111,6 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
     '/admin/bikes',
     '/admin/artigos',
     '/admin/rankings',
-    '/admin/ia',
-    '/admin/radar-global',
     '/admin/configuracoes',
   ];
   const currentTabIndex = adminTabs.indexOf(pathname);
@@ -177,7 +173,7 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
   return (
     <div className="w-full max-w-full overflow-x-hidden min-h-screen bg-[#FDFBF7] dark:bg-stone-950 flex flex-col">
       {/* Mobile Top Navigation Bar with Toggle Sidebar Button */}
-      {!isCopilotPage && !isCreatePage && (
+      {!isCreatePage && (
         <div className="lg:hidden sticky top-0 z-30 flex items-center justify-between px-4 py-3 bg-stone-900 text-white border-b-2 border-stone-800 shadow-md">
           <div className="flex items-center gap-3">
             <button
@@ -209,7 +205,7 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
 
       <div className="flex flex-1 relative min-h-0">
         {/* Navigation Sidebar */}
-        {!isCopilotPage && !isCreatePage && <AdminSidebar />}
+        {!isCreatePage && <AdminSidebar />}
 
         {/* Main Content Area */}
         <main
@@ -217,11 +213,10 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
           className={cn(
             'w-full min-w-0 flex-1 transition-all duration-300',
             // O `pb-12` existe para o rodapé não cobrir o conteúdo nas páginas
-            // com scroll normal. O copiloto e a tela de criação são full-height
-            // (`h-dvh`, com scroll interno): manter o padding lá somava 48px de
-            // altura ao `100dvh` e produzia uma barra de rolagem fantasma na
-            // página inteira, sem nada para rolar.
-            !isCopilotPage && !isCreatePage
+            // com scroll normal. A tela de criação é full-height, com scroll
+            // interno: manter o padding lá somaria 48px de altura e produziria
+            // uma barra de rolagem fantasma na página inteira, sem nada a rolar.
+            !isCreatePage
               ? cn('pb-12', collapsed ? 'lg:ml-20' : 'lg:ml-64')
               : 'ml-0'
           )}
@@ -231,7 +226,7 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
       </div>
 
       {/* Admin Footer */}
-      {!isCopilotPage && <AdminFooter />}
+      <AdminFooter />
 
       {/* PWA Components */}
       <SWRegistration />

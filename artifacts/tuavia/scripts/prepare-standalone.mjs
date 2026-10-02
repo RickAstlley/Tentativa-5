@@ -229,15 +229,11 @@ const SCRIPTS_DEST_DIR = path.resolve(STANDALONE_DIR, 'scripts');
 
 const scriptsToCopy = [
   'env-loader.mjs',
-  'process-llm-jobs.mjs',
-  'process-llm-jobs-loop.mjs',
-  'cron-ai-pipeline.mjs',
-  'install-cron.mjs',
   'start-hostinger.mjs',
 ];
 
 try {
-  console.log('[prepare-standalone] 📜 Copiando scripts de IA, variáveis e supervisor para o standalone...');
+  console.log('[prepare-standalone] 📜 Copiando variáveis e supervisor para o standalone...');
   if (!fs.existsSync(SCRIPTS_DEST_DIR)) {
     fs.mkdirSync(SCRIPTS_DEST_DIR, { recursive: true });
   }
@@ -349,20 +345,8 @@ try {
   process.exit(1);
 }
 
-// 6.8. Inicializar arquivo seed para dev local em data/llm_jobs.json
-const standaloneJobsPath = path.resolve(DATA_DEST, 'llm_jobs.json');
-if (!fs.existsSync(standaloneJobsPath)) {
-  try {
-    fs.writeFileSync(standaloneJobsPath, '[]\n', 'utf-8');
-    console.log('[prepare-standalone] 📝 llm_jobs.json seed inicializado para desenvolvimento.');
-  } catch (err) {
-    console.error(`[prepare-standalone] ❌ Erro ao inicializar llm_jobs.json seed: ${err.message}`);
-  }
-} else {
-  console.log('[prepare-standalone] ℹ️ llm_jobs.json seed presente no standalone (em produção, o supervisor validará o caminho externo LLM_JOBS_FILE).');
-}
 
-// 6.9. Garantir package.json com scripts de inicialização no standalone
+// 6.8. Garantir package.json com scripts de inicialização no standalone
 const standalonePkgPath = path.resolve(STANDALONE_DIR, 'package.json');
 try {
   let pkgContent = {};
@@ -381,7 +365,7 @@ try {
 
 console.log('===============================================================');
 console.log('🎉 Pacote standalone preparado com SUCESSO para produção!');
-console.log('👉 Para iniciar o servidor e o worker contínuo de IA:');
+console.log('👉 Para iniciar o servidor:');
 console.log('   npm start');
 console.log('   (ou node scripts/start-hostinger.mjs)');
 console.log('===============================================================');

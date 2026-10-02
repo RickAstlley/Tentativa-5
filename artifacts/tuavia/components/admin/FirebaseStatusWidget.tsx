@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Database, CheckCircle2, AlertCircle, RefreshCw, Layers, ShieldAlert, Key } from 'lucide-react';
 import { isFirebaseConfigured } from '@/lib/firebase';
-import { fetchAdminJson } from '@/lib/ai/clientResponse';
+import { fetchAdminJson } from '@/lib/apiResponse';
 
 interface FirebaseReport {
   success: boolean;

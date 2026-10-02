@@ -32,17 +32,10 @@ const NAV_ITEMS: FooterNavItem[] = [
   { href: '/admin/bikes', icon: Bike, label: 'E-Bikes', shortcut: '⌘2', badgeColor: 'emerald' },
   { href: '/admin/artigos', icon: FileText, label: 'Artigos', shortcut: '⌘3', badgeColor: 'indigo' },
   { href: '/admin/rankings', icon: Trophy, label: 'Rankings', shortcut: '⌘4', badgeColor: 'amber' },
-  { href: '/admin/ia', icon: Sparkles, label: 'Copiloto IA', shortcut: '⌘5', badgeColor: 'rose' },
-  { href: '/admin/radar-global', icon: Globe2, label: 'Radar Global', shortcut: '⌘6' },
-  { href: '/admin/configuracoes', icon: Settings, label: 'Config', shortcut: '⌘,' },
+  { href: '/admin/configuracoes', icon: Settings, label: 'Config', shortcut: '⌘5' },
 ];
 
 const MORE_ITEMS: FooterNavItem[] = [
-  { href: '/admin/ia?mode=chat', icon: Sparkles, label: 'Chat IA' },
-  { href: '/admin/ia?mode=article_writer', icon: FileText, label: 'Redator Artigos' },
-  { href: '/admin/ia?mode=ebike_analysis', icon: Bike, label: 'Ficha E-Bike' },
-  { href: '/admin/ia?mode=top_ranking', icon: Trophy, label: 'Top Ranking' },
-  { href: '/admin/ia?mode=audit_anti_hallucination', icon: Activity, label: 'Auditor CONTRAN' },
   { href: '/admin/criar', icon: Layers, label: 'Wizard Criação' },
 ];
 
@@ -50,7 +43,6 @@ export default function AdminFooter() {
   const pathname = usePathname() || '';
   const [isExpanded, setIsExpanded] = useState(false);
   const [badgeCounts, setBadgeCounts] = useState<Record<string, number>>({});
-  const [llmJobRunning, setLlmJobRunning] = useState(false);
 
   useEffect(() => {
     const fetchCounts = async () => {
@@ -70,17 +62,6 @@ export default function AdminFooter() {
     fetchCounts();
     const interval = setInterval(fetchCounts, 30_000);
     return () => clearInterval(interval);
-  }, []);
-
-  useEffect(() => {
-    const handleJobStart = () => setLlmJobRunning(true);
-    const handleJobEnd = () => setLlmJobRunning(false);
-    window.addEventListener('llm-job-start', handleJobStart);
-    window.addEventListener('llm-job-end', handleJobEnd);
-    return () => {
-      window.removeEventListener('llm-job-start', handleJobStart);
-      window.removeEventListener('llm-job-end', handleJobEnd);
-    };
   }, []);
 
   const getBadgeColor = (color: FooterNavItem['badgeColor']) => ({
@@ -186,12 +167,6 @@ export default function AdminFooter() {
         ))}
       </div>
       <div className="flex items-center gap-4 text-[10px]">
-        {llmJobRunning && (
-          <span className="flex items-center gap-1.5 px-2 py-0.5 bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-full animate-pulse">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-            IA Processando
-          </span>
-        )}
         <span className="text-stone-500">v2.1.0</span>
       </div>
     </footer>

@@ -13,12 +13,10 @@ import { EBikeCategory } from '@/types/ebike';
 import { PUBLISHED_ARTICLES_STORAGE_KEY, fetchArticlesFromFirestore, extractFirstImageUrlFromMarkdown } from '@/lib/articles';
 import { ImageUploadField } from '@/components/admin/ImageUploadField';
 import { GalleryImagesField } from '@/components/admin/GalleryImagesField';
-import { ArticleImageResearchPanel } from '@/components/admin/ArticleImageResearchPanel';
 import FileIngestionDropzone from '@/components/admin/FileIngestionDropzone';
-import ArticleAiAssistantCard from '@/components/admin/ArticleAiAssistantCard';
 import { ExtractedImageFile } from '@/lib/admin/fileIngestion';
-import { fetchAdminJson } from '@/lib/ai/clientResponse';
-import { autoLinkEBikesInText } from '@/lib/ai/ebikeAutoLinker';
+import { fetchAdminJson } from '@/lib/apiResponse';
+import { autoLinkEBikesInText } from '@/lib/ebikeAutoLinker';
 import {
   sanitizeAndUploadArticleImages,
   uploadMediaOrKeep as uploadBase64ToCentralMedia,
@@ -28,7 +26,6 @@ import remarkGfm from 'remark-gfm';
 import { formatMarkdownForDisplay } from '@/lib/utils/markdownFormatter';
 import { useAutoSave } from '@/hooks/useAutoSave';
 import type { EditorBlock } from '@/types/blockEditor';
-import InlineAIEditor from '@/components/admin/InlineAIEditor';
 import SnippetsPanel from '@/components/admin/SnippetsPanel';
 
 import {
@@ -128,8 +125,6 @@ export default function ArticleForm({ initialData, isEditing = false }: ArticleF
   const [isAutoLinkingBikes, setIsAutoLinkingBikes] = useState(false);
 
   // Inline AI Editor state
-  const [showInlineAI, setShowInlineAI] = useState(false);
-  const [inlineAISelection, setInlineAISelection] = useState<{ start: number; end: number; text: string } | null>(null);
 
   // Snippets Panel state
   const [showSnippets, setShowSnippets] = useState(false);
@@ -797,9 +792,9 @@ export default function ArticleForm({ initialData, isEditing = false }: ArticleF
               <Sparkles className="w-4 h-4" />
             </div>
             <div>
-              <span className="block">Redator IA & Ingestão de Artigo</span>
+              <span className="block">Ingestão de Artigo</span>
               <span className="block text-[11px] font-normal text-stone-500">
-                {showAiIngestionTools ? 'Clique para recolher o assistente' : 'Clique para expandir importação por arquivo (PDF/DOCX/MD) ou geração via IA'}
+                {showAiIngestionTools ? 'Clique para recolher as ferramentas' : 'Clique para expandir a importação por arquivo (PDF/DOCX/MD)'}
               </span>
             </div>
           </button>
@@ -807,7 +802,7 @@ export default function ArticleForm({ initialData, isEditing = false }: ArticleF
             type="button"
             onClick={() => setShowAiIngestionTools(!showAiIngestionTools)}
             className="p-2 text-stone-500 hover:text-stone-900 bg-stone-100 rounded-lg transition-colors cursor-pointer"
-            aria-label="Alternar ferramentas de IA"
+            aria-label="Alternar ferramentas de ingestão"
           >
             {showAiIngestionTools ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
           </button>
@@ -815,13 +810,7 @@ export default function ArticleForm({ initialData, isEditing = false }: ArticleF
 
         {showAiIngestionTools && (
           <div className="space-y-6 pt-3 border-t-2 border-stone-100 animate-fadeIn">
-            {/* REDATOR IA EDITORIAL COM GLM 5.3 (2 PINGS: CONTEÚDO + SEO) */}
-            <ArticleAiAssistantCard
-              onArticleGenerated={handleAiArticleGenerated}
-              initialQuery={title}
-            />
-
-            {/* COMPONENTE DE INGESTÃO VIA ARQUIVOS (.MD, .YAML, .TXT, .ZIP) */}
+            {/* INGESTÃO VIA ARQUIVOS (.MD, .YAML, .TXT, .ZIP) — extração local, sem IA */}
             <FileIngestionDropzone
               mode="article"
               onDataExtracted={handleFileIngestionExtracted}
@@ -1069,22 +1058,6 @@ export default function ArticleForm({ initialData, isEditing = false }: ArticleF
             helpText="Recomendado: Formato 16:9 em alta resolução. Faça upload ou selecione fotos contextuais."
           />
 
-          {/* Card 2.5: Pesquisa de Imagens Reais na Web com Curadoria Multimodal */}
-          <ArticleImageResearchPanel
-            articleTopic={title}
-            articleCategory={category}
-            articleContext={excerpt || body.slice(0, 300)}
-            onSetCoverImage={(url) => setCoverImage(url)}
-            onInsertIntoBody={(markdownTag) => {
-              setBody((prev) => `${prev}${markdownTag}`);
-            }}
-            onAddToGallery={(url) => {
-              setGalleryImages((prev) => {
-                if (prev.includes(url)) return prev;
-                return [...prev, url];
-              });
-            }}
-          />
 
           {/* Card 2.8: Galeria de Fotos Complementares do Artigo */}
           <GalleryImagesField
@@ -1266,18 +1239,6 @@ export default function ArticleForm({ initialData, isEditing = false }: ArticleF
               placeholder="# Introdução&#10;&#10;Escreva o conteúdo do artigo em Markdown... Use ## para títulos e listas com - ou *"
               value={body}
               onChange={(e) => handleBodyChange(e.target.value)}
-              onSelect={(e) => {
-                const target = e.target as HTMLTextAreaElement;
-                const start = target.selectionStart;
-                const end = target.selectionEnd;
-                if (start !== end) {
-                  setInlineAISelection({ start, end, text: body.slice(start, end) });
-                  setShowInlineAI(true);
-                } else {
-                  setShowInlineAI(false);
-                  setInlineAISelection(null);
-                }
-              }}
               className="w-full p-4 bg-stone-50 border-2 border-stone-900 rounded-xl font-mono text-xs text-stone-900 focus:outline-none focus:bg-white focus:ring-2 focus:ring-indigo-500 leading-relaxed"
             />
           </div>
@@ -1604,22 +1565,6 @@ export default function ArticleForm({ initialData, isEditing = false }: ArticleF
         </button>
       </div>
     
-    {/* Inline AI Editor */}
-    {showInlineAI && inlineAISelection && (
-      <InlineAIEditor
-        editorRef={bodyTextareaRef}
-        onReplace={(newText) => {
-          if (!inlineAISelection) return;
-          const newBody = body.slice(0, inlineAISelection.start) + newText + body.slice(inlineAISelection.end);
-          setBody(newBody);
-          setShowInlineAI(false);
-          setInlineAISelection(null);
-        }}
-        selectedText={inlineAISelection.text}
-        onClose={() => { setShowInlineAI(false); setInlineAISelection(null); }}
-      />
-    )}
-
     {/* Snippets Panel */}
     <SnippetsPanel
       isOpen={showSnippets}

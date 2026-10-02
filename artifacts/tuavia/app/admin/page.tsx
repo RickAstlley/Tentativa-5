@@ -7,11 +7,9 @@ import { auth, db } from '@/lib/firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { collection, getDocs, getCountFromServer } from 'firebase/firestore';
 import AdminHeader from '@/components/admin/layout/AdminHeader';
-import AIRadarPanel from '@/components/admin/AIRadarPanel';
-import CSMTelemetryPanel from '@/components/admin/CSMTelemetryPanel';
 import { fetchArticlesFromFirestore } from '@/lib/articles';
 import { fetchEBikesFromFirestore } from '@/lib/ebikes';
-import { fetchAdminJson } from '@/lib/ai/clientResponse';
+import { fetchAdminJson } from '@/lib/apiResponse';
 import SectionErrorBoundary from '@/components/ui/SectionErrorBoundary';
 import { Card, Button } from '@/components/admin/ui';
 import {
@@ -26,8 +24,6 @@ import {
   RefreshCw,
   Sparkles,
   Trophy,
-  Zap,
-  Brain,
 } from 'lucide-react';
 
 interface QuickStat {
@@ -128,22 +124,18 @@ export default function AdminDashboardPage() {
     { label: 'E-Bikes', value: bikesCount, icon: <Bike className="w-5 h-5" />, color: 'text-emerald-600', bgColor: 'bg-emerald-100', href: '/admin/bikes', iconColor: 'text-emerald-800' },
     { label: 'Artigos', value: articlesCount, icon: <FileText className="w-5 h-5" />, color: 'text-indigo-600', bgColor: 'bg-indigo-100', href: '/admin/artigos', iconColor: 'text-indigo-800' },
     { label: 'Rankings', value: rankingsCount, icon: <Trophy className="w-5 h-5" />, color: 'text-amber-600', bgColor: 'bg-amber-100', href: '/admin/rankings', iconColor: 'text-amber-800' },
-    { label: 'Rascunhos IA', value: null, icon: <Brain className="w-5 h-5" />, color: 'text-purple-600', bgColor: 'bg-purple-100', href: '/admin/ia', iconColor: 'text-purple-800' },
   ];
 
   const primaryActions = [
     { label: 'Novo Artigo', href: '/admin/artigos/novo', icon: <PlusCircle className="w-4 h-4" />, variant: 'primary' as const, color: 'emerald' },
     { label: 'Novo Ranking', href: '/admin/rankings/novo', icon: <PlusCircle className="w-4 h-4" />, variant: 'primary' as const, color: 'amber' },
     { label: 'Nova Bike', href: '/admin/bikes/novo', icon: <PlusCircle className="w-4 h-4" />, variant: 'primary' as const, color: 'emerald' },
-    { label: 'LLM Panel', href: '/admin/ia?mode=llm_panel', icon: <Zap className="w-4 h-4" />, variant: 'secondary' as const, color: 'stone' },
   ];
 
   const secondaryAreas = [
     { label: 'E-Bikes', href: '/admin/bikes', icon: <Bike className="w-6 h-6" />, description: 'Catálogo de modelos, especificações de bateria e motor, preços e links afiliados.', color: 'emerald', count: bikesCount, countLabel: 'bikes' },
-    { label: 'Artigos', href: '/admin/artigos', icon: <FileText className="w-6 h-6" />, description: 'Publicação de guias de compra, análises, comparativos e notícias do setor com IA.', color: 'indigo', count: articlesCount, countLabel: 'posts' },
-    { label: 'Rankings', href: '/admin/rankings', icon: <Trophy className="w-6 h-6" />, description: 'Montador de Top 3 a Top 10 de bikes, baterias, peças e kits com IA e links de afiliados.', color: 'amber', count: rankingsCount, countLabel: 'rankings' },
-    { label: 'Copiloto IA', href: '/admin/ia', icon: <Sparkles className="w-6 h-6" />, description: 'Central de geração de artigos, fichas técnicas e otimização SEO com modelos NVIDIA NIM.', color: 'purple', count: null, countLabel: '' },
-    { label: 'Radar Global', href: '/admin/radar-global', icon: <Brain className="w-6 h-6" />, description: 'Varredura de tendências e notícias do setor de e-bikes a cada 2 horas.', color: 'blue', count: null, countLabel: '' },
+    { label: 'Artigos', href: '/admin/artigos', icon: <FileText className="w-6 h-6" />, description: 'Publicação de guias de compra, análises, comparativos e notícias do setor.', color: 'indigo', count: articlesCount, countLabel: 'posts' },
+    { label: 'Rankings', href: '/admin/rankings', icon: <Trophy className="w-6 h-6" />, description: 'Montador de Top 3 a Top 10 de bikes, baterias, peças e kits, com links de afiliados.', color: 'amber', count: rankingsCount, countLabel: 'rankings' },
     { label: 'Configurações', href: '/admin/configuracoes', icon: <Settings className="w-6 h-6" />, description: 'Personalize textos da barra lateral, chamadas de confiança, rodapé e metadados institucionais.', color: 'stone', count: null, countLabel: '' },
   ];
 
@@ -243,27 +235,7 @@ export default function AdminDashboardPage() {
           })}
         </div>
 
-        {/* AI Activity Section */}
-        <Card variant="default" padding="lg" className="bg-white dark:bg-stone-900 border-2 border-stone-900 dark:border-stone-700">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-purple-100 dark:bg-purple-950/30 flex items-center justify-center">
-                <Sparkles className="w-4 h-4 text-purple-600 dark:text-purple-400" />
-              </div>
-              <h3 className="text-lg font-black text-stone-900 dark:text-white">Atividade IA Recente</h3>
-            </div>
-            <Button variant="ghost" size="sm" asChild>
-              <Link href="/admin/ia?mode=telemetry">Ver Telemetria →</Link>
-            </Button>
-          </div>
-          <SectionErrorBoundary sectionName="Radar IA Panel">
-            <AIRadarPanel />
-          </SectionErrorBoundary>
-        </Card>
 
-        <SectionErrorBoundary sectionName="CSM Telemetry Panel">
-          <CSMTelemetryPanel />
-        </SectionErrorBoundary>
 
         {/* Sync Tool */}
         <Card variant="outlined" padding="lg" className="bg-stone-50 dark:bg-stone-900/50 border-2 border-stone-900 dark:border-stone-700">

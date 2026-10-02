@@ -31,7 +31,6 @@ export async function POST(req: NextRequest) {
     try {
       revalidatePath('/');
       revalidatePath('/artigos');
-      revalidatePath('/radar');
       revalidatePath('/ebike');
       revalidatePath('/top-rankings');
       revalidatePath('/comparador');

@@ -1,5 +1,14 @@
+/**
+ * Auto-vinculação de e-bikes do catálogo em texto Markdown.
+ *
+ * Extraído de `lib/ai/ebikeAutoLinker.ts` na remoção do subsistema de LLM. Mantido
+ * apenas o trecho determinístico: `autoLinkEBikesInText` casa o texto contra o
+ * catálogo por nome/marca, sem nenhuma chamada de modelo, e é o que o editor de
+ * artigo usa ao publicar.
+ *
+ * A variante `autoLinkEBikesWithLLM` foi descartada junto com o pipeline de jobs.
+ */
 import { getGroupedEBikes, getLocalPublishedBikes, PUBLISHED_BIKES_STORAGE_KEY } from '@/lib/ebikes';
-import { createAndPollLLMJob } from '@/lib/ai/llmJobClient';
 
 export interface EBikeLinkItem {
   marca: string;
@@ -135,84 +144,4 @@ export function autoLinkEBikesInText(
     linkedCount: totalLinked,
     linkedBikes: Array.from(linkedBikesSet),
   };
-}
-
-/**
- * Utiliza LLM com fallback para auto-vincular e-bikes do catálogo no texto em Markdown.
- */
-export async function autoLinkEBikesWithLLM(
-  markdownText: string,
-  customCatalog?: EBikeLinkItem[]
-): Promise<{ updatedText: string; linkedCount: number; linkedBikes: string[] }> {
-  const catalog = customCatalog && customCatalog.length > 0 ? customCatalog : getCatalogEBikesForAutoLink();
-  
-  // Primeiro roda a validação determinística/smart local
-  const localResult = autoLinkEBikesInText(markdownText, catalog);
-
-  if (!markdownText || !markdownText.trim()) {
-    return localResult;
-  }
-
-  try {
-    const bikesSummary = catalog
-      .map((b) => `- ${b.fullLabel} -> Slug: /bike/${b.slug}`)
-      .join('\n');
-
-    const prompt = `Você é o Editor Técnico do TuaVia.
-Sua tarefa é analisar o texto em Markdown abaixo e identificar TODAS as menções a modelos de e-bikes que existem no nosso catálogo de produtos.
-Para cada e-bike do catálogo mencionada no texto (que ainda NÃO esteja como um link Markdown [texto](url)), adicione o link para a página da e-bike (/bike/slug-da-bike).
-
-LISTA DE E-BIKES DISPONÍVEIS NO CATÁLOGO DO SITE:
-${bikesSummary}
-
-TEXTO ORIGINAL EM MARKDOWN:
-${markdownText}
-
-REGRAS:
-1. Mantenha TODO o restante do texto, formatação, títulos e estrutura de Markdown RIGOROSAMENTE INALTERADOS.
-2. NÃO adicione links a e-bikes que já possuem links no texto.
-3. Retorne ESTRITAMENTE um JSON válido no formato:
-{
-  "updatedBody": "Texto Markdown completo com os links inseridos...",
-  "linkedBikes": ["Sense Easy One", "Caloi E-Vibe"]
-}`;
-
-    const job = await createAndPollLLMJob({
-      type: 'content_generation',
-      input: {
-        task: 'content_generation',
-        model: 'nvidia/nemotron-3-super-120b-a12b',
-        prompt,
-      },
-    });
-
-    const resultData = job.result?.data;
-    const resultText = job.result?.text;
-
-    let parsed: any = resultData;
-    if (!parsed && resultText) {
-      try {
-        let cleanText = resultText.trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
-        const fb = cleanText.indexOf('{');
-        const lb = cleanText.lastIndexOf('}');
-        if (fb !== -1 && lb > fb) {
-          cleanText = cleanText.substring(fb, lb + 1);
-        }
-        parsed = JSON.parse(cleanText);
-      } catch {}
-    }
-
-    if (parsed && typeof parsed.updatedBody === 'string' && parsed.updatedBody.trim()) {
-      const llmLinkedBikes = Array.isArray(parsed.linkedBikes) ? parsed.linkedBikes : [];
-      return {
-        updatedText: parsed.updatedBody.trim(),
-        linkedCount: Math.max(llmLinkedBikes.length, localResult.linkedCount),
-        linkedBikes: Array.from(new Set([...llmLinkedBikes, ...localResult.linkedBikes])),
-      };
-    }
-  } catch (err) {
-    console.warn('[ebikeAutoLinker] LLM auto-linker falhou, utilizando resultado local smart:', err);
-  }
-
-  return localResult;
 }

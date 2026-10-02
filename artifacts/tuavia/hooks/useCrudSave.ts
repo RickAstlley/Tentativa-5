@@ -20,7 +20,7 @@
 
 import { useCallback, useRef, useState } from 'react';
 import { invalidateTags, type Tag } from '@/hooks/useApi';
-import { fetchAdminJson } from '@/lib/ai/clientResponse';
+import { fetchAdminJson } from '@/lib/apiResponse';
 
 export type SaveStatus = 'idle' | 'saving' | 'saved' | 'error';
 

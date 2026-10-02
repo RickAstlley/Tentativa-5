@@ -1,8 +1,20 @@
 /**
  * TuaVia — Leitor Seguro de Respostas de API e Requisições Administrativas
- * 
- * Previne falhas de parsing JSON causadas por páginas de erro HTML de proxy (como 504 Gateway Timeout ou 502 da Hostinger),
- * transforma respostas com erro em objetos estruturados em português e anexa credenciais de autenticação automaticamente.
+ *
+ * MOVIDO de `lib/ai/clientResponse.ts` na remoção do subsistema de LLM.
+ * Este módulo nunca teve dependência de IA: o único import é `@/lib/adminAuth`.
+ * Ele parseia respostas de API, transforma página de erro HTML do proxy (504/502
+ * da Hostinger) em erro estruturado em pt-BR, e anexa a sessão de admin.
+ *
+ * Ficou em `lib/ai/` por conveniência de proximidade com o resto do pipeline, mas
+ * 27 arquivos o consomem — a maioria nada a ver com IA (BikeForm, ArticleForm,
+ * ImageUploadField, FirebaseStatusWidget, hooks/useApi). Apagar `lib/ai/` sem
+ * mover este arquivo antes quebraria 27 arquivos por motivo errado.
+ *
+ * Previne falhas de parsing JSON causadas por páginas de erro HTML de proxy (como
+ * 504 Gateway Timeout ou 502 da Hostinger), transforma respostas com erro em
+ * objetos estruturados em português e anexa credenciais de autenticação
+ * automaticamente.
  */
 
 import { getStoredAdminSession, AUTHORIZED_ADMIN_EMAIL } from '@/lib/adminAuth';

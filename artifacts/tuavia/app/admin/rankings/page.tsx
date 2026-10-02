@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { db } from '@/lib/firebase';
 import { collection, getDocs, deleteDoc, doc } from 'firebase/firestore';
 import { TopRanking, RANKING_STORAGE_KEY } from '@/types/ranking';
-import { fetchAdminJson } from '@/lib/ai/clientResponse';
+import { fetchAdminJson } from '@/lib/apiResponse';
 import AdminHeader from '@/components/admin/AdminHeader';
 import {
   Trophy,

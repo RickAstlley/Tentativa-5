@@ -38,14 +38,6 @@ const RAIL_GROUPS: { label: string; items: RailItem[] }[] = [
     ],
   },
   {
-    label: 'IA & Automação',
-    items: [
-      { href: '/admin/ia', icon: Sparkles, label: 'Copiloto IA', badgeColor: 'rose' },
-      { href: '/admin/radar-global', icon: Globe2, label: 'Radar Global' },
-      { href: '/admin/criar', icon: Zap, label: 'Criar com IA' },
-    ],
-  },
-  {
     label: 'Sistema',
     items: [
       { href: '/admin/configuracoes', icon: Settings, label: 'Configurações' },
@@ -242,16 +234,6 @@ export default function NavigationRail() {
               </span>
             )}
           </div>
-          {(!collapsed || mobileOpen) && (
-            <Link
-              href="/admin/telemetry"
-              onClick={handleLinkClick}
-              className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-bold text-stone-600 dark:text-stone-400 hover:text-stone-950 dark:hover:text-white hover:bg-stone-200 dark:hover:bg-stone-800 transition-colors"
-            >
-              <Activity className="w-4 h-4 text-emerald-600" />
-              <span>Telemetria & IA</span>
-            </Link>
-          )}
         </div>
       </aside>
     </>
