@@ -748,33 +748,62 @@ function decodePdfHexString(hex: string): string {
   if (hex.length < 2 || hex.length % 2 !== 0) return '';
 
   /**
-   * A spec do PDF manda string de 2 bytes em UTF-16BE: "0044 006F" é "DO",
-   * um code unit de 4 dígitos. Muitos geradores, porém, emitem 1 byte por
-   * caractere com o alto zerado: "4400 6F00" é "DO" também.
+   * A spec manda 2 bytes em UTF-16BE ("0044 006F" → "DO"). Muitos geradores
+   * emitem 1 byte com o alto zerado ("4400 6F00" → "DO" também).
    *
-   * O padrão `xx00 xx00` identifica o segundo caso. O primeiro — o da spec —
-   * precisa de 4 dígitos por caractere, e ler byte a byte produzia
-   * "\u0000M\u0000a\u0000r" em vez de "Mar".
+   * Adivinhar pelo formato é frágil — string curta não casa com o padrão de
+   * byte único e acabava descartada. Em vez disso, decodifica como UTF-16BE e
+   * confere o resultado: se aparecer NUL intercalado, era byte único. A
+   * própria saída diz qual dos dois era.
    */
-  const singleByte = /^(?:[0-9A-Fa-f]{2}00){3,}$/.test(hex);
-  const width = singleByte ? 2 : 4;
-  if (!singleByte && hex.length % 4 !== 0) return '';
-
-  let out = '';
-  for (let i = 0; i + width <= hex.length; i += width) {
-    const code = parseInt(hex.slice(i, i + width), 16);
-    if (Number.isNaN(code)) continue;
-
-    // Par substituto UTF-16 (emoji e afins), que ocupa 4 bytes = 8 dígitos.
-    if (!singleByte && code >= 0xd800 && code <= 0xdbff && i + width * 2 <= hex.length) {
-      const low = parseInt(hex.slice(i + width, i + width * 2), 16);
-      if (low >= 0xdc00 && low <= 0xdfff) {
-        out += String.fromCharCode(((code - 0xd800) << 10) + (low - 0xdc00) + 0x10000);
-        i += width - 1;
-        continue;
+  const utf16 = (): string => {
+    if (hex.length % 4 !== 0) return '';
+    let s = '';
+    for (let i = 0; i + 4 <= hex.length; i += 4) {
+      const code = parseInt(hex.slice(i, i + 4), 16);
+      if (Number.isNaN(code)) continue;
+      if (code >= 0xd800 && code <= 0xdbff && i + 8 <= hex.length) {
+        const low = parseInt(hex.slice(i + 4, i + 8), 16);
+        if (low >= 0xdc00 && low <= 0xdfff) {
+          s += String.fromCharCode(((code - 0xd800) << 10) + (low - 0xdc00) + 0x10000);
+          i += 3;
+          continue;
+        }
       }
+      s += String.fromCharCode(code);
     }
+    return s;
+  };
 
+  /**
+   * A spec do PDF manda 2 bytes em UTF-16BE: "0044 006F" → "DO". Muitos
+   * geradores emitem 1 byte com o alto zerado: "4400 6F00" → "DO" também.
+   *
+   * O padrão `xx00 xx00 ...` cobrando o string INTEIRO é o discriminador
+   * confiável. Decodificar e olhar o resultado não serve: byte único em
+   * UTF-16BE vira lixo sem NUL nenhum, e UTF-16BE em byte único idem — os
+   * dois caminhos devolvem "texto" e nenhum dos dois denuncia o erro.
+   *
+   * Exige duas repetições para não confundir com um único "xx00".
+   */
+  const byteUnico = /^(?:[0-9A-Fa-f]{2}00){2,}$/.test(hex);
+
+  if (byteUnico) {
+    let s = '';
+    for (let i = 0; i + 4 <= hex.length; i += 4) {
+      s += String.fromCharCode(parseInt(hex.slice(i, i + 2), 16));
+    }
+    return s;
+  }
+
+  const como16 = utf16();
+  if (como16) return como16;
+
+  // Ímpar de dígitos de 4 mas válido como bytes soltos.
+  let out = '';
+  for (let i = 0; i + 2 <= hex.length; i += 2) {
+    const code = parseInt(hex.slice(i, i + 2), 16);
+    if (Number.isNaN(code)) continue;
     out += String.fromCharCode(code);
   }
   return out;
