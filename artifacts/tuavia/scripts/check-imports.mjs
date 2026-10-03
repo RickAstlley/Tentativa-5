@@ -21,6 +21,7 @@ const ROOT = process.cwd();
 const ALIAS = '@/';
 const SCAN_DIRS = ['app', 'components', 'lib', 'context', 'hooks', 'scripts', 'types'];
 const SKIP_DIRS = new Set(['node_modules', '.next', '.git', 'data', 'public', 'assets']);
+const SKIP_FILE_SUFFIXES = ['.test.ts', '.test.tsx', '.spec.ts', '.spec.tsx'];
 const EXTENSIONS = ['', '.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs', '.json', '.css'];
 const INDEX_FILES = ['index.ts', 'index.tsx', 'index.js', 'index.jsx'];
 
@@ -44,6 +45,7 @@ function walk(dir, out = []) {
   }
   for (const entry of entries) {
     if (entry.name.startsWith('.') || SKIP_DIRS.has(entry.name)) continue;
+    if (SKIP_FILE_SUFFIXES.some((suffix) => entry.name.endsWith(suffix))) continue;
     const full = path.join(dir, entry.name);
     if (entry.isDirectory()) walk(full, out);
     else if (/\.(ts|tsx|mjs|js)$/.test(entry.name)) out.push(full);
