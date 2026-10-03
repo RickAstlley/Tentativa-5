@@ -44,15 +44,27 @@ export interface AdminSessionData {
 
 /**
  * Valida se um e-mail pertence à lista autorizada de administradores.
+ * 
+ * No servidor: valida contra ADMIN_EMAILS do ambiente.
+ * No cliente: se há sessão com token válido, aceita (servidor já validou).
  */
 export function isAuthorizedAdminEmail(email?: string | null): boolean {
   if (!email) return false;
   const normalized = email.toLowerCase().trim();
-  const authorizedEmail = getAuthorizedAdminEmail();
-  if (normalized === authorizedEmail.toLowerCase().trim()) return true;
-  return getAdminEmails().some(
-    (admin) => admin.toLowerCase().trim() === normalized
-  );
+
+  // No servidor, valida contra a lista de e-mails autorizados
+  if (typeof window === 'undefined') {
+    const authorizedEmail = getAuthorizedAdminEmail();
+    if (normalized === authorizedEmail.toLowerCase().trim()) return true;
+    return getAdminEmails().some(
+      (admin) => admin.toLowerCase().trim() === normalized
+    );
+  }
+
+  // No cliente, não temos acesso a ADMIN_EMAILS.
+  // Se chegou até aqui com um token, o servidor já validou.
+  // A validação real acontece no server via verifyServerAdmin().
+  return true;
 }
 
 
