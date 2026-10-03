@@ -70,7 +70,11 @@ const apiKey = cleanEnvValue(process.env.NEXT_PUBLIC_FIREBASE_API_KEY || process
 const projectId = getFirebaseProjectId();
 const databaseId = getFirebaseDatabaseId();
 
-if (!apiKey || apiKey.trim() === '') {
+const isServerBuild = typeof window === 'undefined' && process.env && process.env.NEXT_PHASE?.includes?.('build');
+
+const finalApiKey = apiKey || (isServerBuild ? 'build-time-placeholder-key' : '');
+
+if (!finalApiKey || finalApiKey.trim() === '') {
   throw new Error(
     'NEXT_PUBLIC_FIREBASE_API_KEY or FIREBASE_API_KEY must be set in environment. ' +
       'Copy .env.example to .env.local and fill in your Firebase project credentials.'
@@ -78,7 +82,7 @@ if (!apiKey || apiKey.trim() === '') {
 }
 
 const firebaseConfig = {
-  apiKey,
+  apiKey: finalApiKey,
   authDomain: cleanEnvValue(process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || process.env.FIREBASE_AUTH_DOMAIN) || appletConfig.authDomain || `${projectId}.firebaseapp.com`,
   projectId,
   storageBucket: cleanEnvValue(process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || process.env.FIREBASE_STORAGE_BUCKET) || appletConfig.storageBucket || `${projectId}.firebasestorage.app`,
@@ -93,9 +97,9 @@ export const storage: FirebaseStorage = getStorage(app);
 export const auth: Auth = getAuth(app);
 
 export function checkFirebaseConfigured(): boolean {
-  const currentApiKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY || process.env.FIREBASE_API_KEY || appletConfig.apiKey || apiKey;
+  const currentApiKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY || process.env.FIREBASE_API_KEY || appletConfig.apiKey || finalApiKey;
   const currentProjectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || process.env.FIREBASE_PROJECT_ID || appletConfig.projectId || projectId;
-  const hasValidApiKey = Boolean(currentApiKey && !currentApiKey.includes('PlaceholderKey') && currentApiKey.trim() !== '');
+  const hasValidApiKey = Boolean(currentApiKey && !currentApiKey.includes('PlaceholderKey') && !currentApiKey.includes('build-time-placeholder') && currentApiKey.trim() !== '');
   const hasValidProjectId = Boolean(currentProjectId && !currentProjectId.includes('placeholder') && currentProjectId.trim() !== '');
   const hasServiceAccount = Boolean(
     process.env.FIREBASE_ADMIN_SERVICE_ACCOUNT ||
