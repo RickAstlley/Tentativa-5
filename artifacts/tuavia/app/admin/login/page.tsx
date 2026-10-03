@@ -16,7 +16,6 @@ import {
   Server
 } from 'lucide-react';
 import {
-  AUTHORIZED_ADMIN_EMAIL,
   getStoredAdminSession,
   authenticateWithPasscodeAsync,
   setAdminSession,

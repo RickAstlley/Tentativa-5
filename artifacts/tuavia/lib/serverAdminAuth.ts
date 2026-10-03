@@ -1,5 +1,5 @@
 import crypto from 'crypto';
-import { AUTHORIZED_ADMIN_EMAIL, isAuthorizedAdminEmail } from '@/lib/adminAuth';
+import { getAuthorizedAdminEmail, isAuthorizedAdminEmail } from '@/lib/adminAuth';
 import { cleanEnvValue, ensureServerEnvLoaded } from '@/lib/envLoader';
 
 /**
@@ -164,7 +164,7 @@ export function verifyServerAdmin(
         safeStringCompare(tokenToCheck, secret) ||
         safeStringCompare(cleanEnvValue(tokenToCheck), secret)
       ) {
-        const email = adminEmail && isAuthorizedAdminEmail(adminEmail) ? adminEmail : AUTHORIZED_ADMIN_EMAIL;
+        const email = adminEmail && isAuthorizedAdminEmail(adminEmail) ? adminEmail : getAuthorizedAdminEmail();
         return { authorized: true, email };
       }
     }

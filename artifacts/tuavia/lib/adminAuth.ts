@@ -3,6 +3,10 @@ import { signOut, User } from 'firebase/auth';
 import { safeJsonStringify } from '@/lib/utils';
 import { cleanEnvValue } from '@/lib/envShared';
 
+/**
+ * Obtém a lista de e-mails administrativos do ambiente.
+ * Lê em runtime para garantir que envLoader já carregou as variáveis.
+ */
 function getAdminEmails(): string[] {
   if (typeof window === 'undefined') {
     return cleanEnvValue(process.env.ADMIN_EMAILS || '')
@@ -18,14 +22,12 @@ function getAdminEmails(): string[] {
 /**
  * E-mail único e exclusivo autorizado para administração do TuaVia.
  * Lido exclusivamente da variável de ambiente ADMIN_EMAILS (server-side).
+ * Acessado via função para garantir leitura em runtime.
  */
-export const AUTHORIZED_ADMIN_EMAIL = cleanEnvValue(process.env.ADMIN_EMAILS || '')
-  .split(',')[0]
-  ? cleanEnvValue(process.env.ADMIN_EMAILS || '')
-      .split(',')[0]
-      .trim()
-      .toLowerCase()
-  : '';
+export function getAuthorizedAdminEmail(): string {
+  const emails = getAdminEmails();
+  return emails[0] || '';
+}
 
 export const AUTHORIZED_ADMIN_EMAILS: readonly string[] = getAdminEmails();
 
@@ -46,8 +48,9 @@ export interface AdminSessionData {
 export function isAuthorizedAdminEmail(email?: string | null): boolean {
   if (!email) return false;
   const normalized = email.toLowerCase().trim();
-  if (normalized === AUTHORIZED_ADMIN_EMAIL.toLowerCase().trim()) return true;
-  return AUTHORIZED_ADMIN_EMAILS.some(
+  const authorizedEmail = getAuthorizedAdminEmail();
+  if (normalized === authorizedEmail.toLowerCase().trim()) return true;
+  return getAdminEmails().some(
     (admin) => admin.toLowerCase().trim() === normalized
   );
 }
@@ -92,7 +95,7 @@ export function setAdminSession(
 ): boolean {
   if (typeof window === 'undefined') return false;
 
-  const normalizedEmail = (email || AUTHORIZED_ADMIN_EMAIL).toLowerCase().trim();
+  const normalizedEmail = (email || getAuthorizedAdminEmail()).toLowerCase().trim();
 
   // Sem token emitido pelo servidor, não há sessão. Antes, este código fabricava
   // um token `tva_` sem assinatura: o painel abria, toda chamada de API
